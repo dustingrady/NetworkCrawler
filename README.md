@@ -1,6 +1,6 @@
 # NetMon
 
-![N|Solid](https://i.imgur.com/oMVSrfW.png)
+![NetMon](https://i.imgur.com/TEXQeK3.png)
 
 NetMon is a network discovery tool (currently under development) that will scan all addresses within the 16-bit ipv4 scheme (192.168.X.X), and provide alerts to the user when devices dis/connect.
 

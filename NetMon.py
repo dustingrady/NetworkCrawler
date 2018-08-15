@@ -3,7 +3,8 @@
 #Status: In development
 
 
-from tkinter import Tk, Scale, Button, Label
+import tkinter as tk
+import subprocess
 import threading
 import queue
 import os
@@ -23,20 +24,35 @@ class NetworkMonitor:
 
     '''Draw GUI elements'''
     def build_GUI(self):
-        threadSlider = Scale(self.master, from_=1, to=self.MAX_THREADS, length=300, orient='horizontal')
+        ''''File menu'''''
+        menubar = tk.Menu(root)
+        filemenu = tk.Menu(menubar, tearoff=0)
+
+        #filemenu.add_separator()
+        filemenu.add_command(label="About")
+        filemenu.add_command(label="Exit", command=root.quit)
+        menubar.add_cascade(label="File", menu=filemenu)
+        root.config(menu=menubar)
+
+        '''Thread slider'''
+        threadSlider = tk.Scale(self.master, from_=1, to=self.MAX_THREADS, resolution=8, length=300, orient='horizontal')
         threadSlider.grid(row=0, column=1)
 
-        threadLabel = Label(self.master, text="Threads")
+        threadLabel = tk.Label(self.master, text="Threads")
         threadLabel.grid(row=1, column=1)
 
-        start_button = Button(self.master, text="Start", command=lambda: self.start_Scan(threadSlider.get()))
+        '''Start/Stop buttons'''
+        start_button = tk.Button(self.master, text="Start", command=lambda: self.start_Scan(threadSlider.get()))
         start_button.grid(row=2, column=0)
 
-        stop_button = Button(self.master, text="Stop", command=lambda: self.stop_Scan())
+        stop_button = tk.Button(self.master, text="Stop", command=lambda: self.stop_Scan())
         stop_button.grid(row=2, column=2)
 
     '''Using 16-bit IPv4 scheme'''
     def scan_Network(self):
+        #arch = subprocess.check_output("arp -a 192.168.1.105", shell=True)
+        #test = subprocess.check_output(['arp -a 192.168.1.105'])
+        #print("BLEH: ", arch)
         while not self.addrQueue.empty() and self.runScan:
             addr = self.addrQueue.get()
             try:
@@ -44,9 +60,10 @@ class NetworkMonitor:
                 response = os.system("ping -n 1 " + addr + ' > nul') #Hide system ping output
                 if response == 0:
                     print(addr, 'is up!', flush=True)
-                    self.alert_User()
+                    #self.alert_User()
                 else:
-                    print(addr, 'is down!', flush=True)
+                    pass
+                    #print(addr, 'is down!', flush=True)
                     #pass
                 self.addrQueue.put(addr)
             except:
@@ -71,7 +88,7 @@ class NetworkMonitor:
         #self.stop_Scan() #Testing
 
 
-root = Tk()
+root = tk.Tk()
 app = NetworkMonitor(root)
-root.geometry('400x100')
+#root.geometry('380x100')
 root.mainloop()

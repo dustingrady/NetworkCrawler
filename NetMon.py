@@ -4,10 +4,12 @@
 
 
 import tkinter as tk
-import subprocess
+from getmac import get_mac_address
 import threading
 import queue
 import os
+#import warnings
+#warnings.filterwarnings("ignore")
 
 class NetworkMonitor:
     def __init__(self, master):
@@ -50,24 +52,23 @@ class NetworkMonitor:
 
     '''Using 16-bit IPv4 scheme'''
     def scan_Network(self):
-        #arch = subprocess.check_output("arp -a 192.168.1.105", shell=True)
-        #test = subprocess.check_output(['arp -a 192.168.1.105'])
-        #print("BLEH: ", arch)
         while not self.addrQueue.empty() and self.runScan:
             addr = self.addrQueue.get()
             try:
-                #print("Threads: " + str(threading.active_count()), flush=True) #Show active thread count
-                response = os.system("ping -n 1 " + addr + ' > nul') #Hide system ping output
-                if response == 0:
-                    print(addr, 'is up!', flush=True)
-                    #self.alert_User()
+                response = os.system("ping -n 1 " + addr + ' > nul')
+                print("Before: ", addr)
+                mac = get_mac_address(ip=addr, network_request=True) #Throws runtime warning after first set of threads completes..?
+                print("After: ", addr)
+
+                if response == 0 and mac:
+                    print(addr, 'is up!', "\t MAC: ", mac, flush=True)
                 else:
                     pass
-                    #print(addr, 'is down!', flush=True)
-                    #pass
-                self.addrQueue.put(addr)
+                    # self.alert_User()
+                    # print(addr, 'is down!', flush=True)
             except:
                 print('Error during scan')
+            self.addrQueue.put(addr)
 
     '''Create multiple threads to accelerate pinging'''
     def start_Scan(self, THREAD_COUNT):

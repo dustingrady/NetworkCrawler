@@ -2,36 +2,36 @@
 #Purpose: Monitor for changes to a network (dis/connections) and alert user.
 #Status: In development
 
-
-import tkinter as tk
 from getmac import get_mac_address
+from Library import FileOutput
+import tkinter as tk
+import warnings
 import threading
 import queue
 import os
-#import warnings
-#warnings.filterwarnings("ignore")
 
-class NetworkMonitor:
+class NetworkMonitor():
     def __init__(self, master):
         self.master = master
+
         master.title('Network Monitor v0.1')
+        warnings.filterwarnings("ignore") #Ignore warning from get-mac lib
 
         self.runScan = True
         self.MAX_THREADS = 128
-
-        self.build_GUI()
-
         self.addrQueue = queue.Queue()
         [self.addrQueue.put(i) for i in['192.168.' + str(x) + '.' + str(y) for x in range(0, 256) for y in range(0, 256)]]
+        self.recordList = []
+
+        self.build_GUI()
 
     '''Draw GUI elements'''
     def build_GUI(self):
         ''''File menu'''''
         menubar = tk.Menu(root)
         filemenu = tk.Menu(menubar, tearoff=0)
-
-        #filemenu.add_separator()
         filemenu.add_command(label="About")
+        filemenu.add_separator()
         filemenu.add_command(label="Exit", command=root.quit)
         menubar.add_cascade(label="File", menu=filemenu)
         root.config(menu=menubar)
@@ -55,13 +55,19 @@ class NetworkMonitor:
         while not self.addrQueue.empty() and self.runScan:
             addr = self.addrQueue.get()
             try:
-                response = os.system("ping -n 1 " + addr + ' > nul')
-                print("Before: ", addr)
-                mac = get_mac_address(ip=addr, network_request=True) #Throws runtime warning after first set of threads completes..?
-                print("After: ", addr)
+                if addr == '192.168.1.50':
+                    FileOutput.build_Report(self, self.recordList)
 
+                response = os.system("ping -n 1 " + addr + ' > nul')
+                mac = get_mac_address(ip=addr) #Throws runtime warning after first set of threads completes..?
                 if response == 0 and mac:
-                    print(addr, 'is up!', "\t MAC: ", mac, flush=True)
+                    record = Record()
+                    record.ip = addr
+                    record.mac = mac
+                    self.recordList.append(record)
+
+                    print(addr, 'is up!', "\t MAC: ", mac, flush=True) #Testing
+
                 else:
                     pass
                     # self.alert_User()
@@ -87,6 +93,13 @@ class NetworkMonitor:
     def alert_User(self):
         print("Emailing user..")
         #self.stop_Scan() #Testing
+
+
+'''Record object'''
+class Record():
+    def __init__(self):
+        self.ip = '0.0.0.0'
+        self.mac = '00:00:00:00:00:00'
 
 
 root = tk.Tk()

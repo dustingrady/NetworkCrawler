@@ -12,6 +12,7 @@ class FileOutput():
     def build_Report(self, recordList):
         with open('records.tsv', 'w') as output:
             writer = csv.writer(output, delimiter='\t')
+            writer.writerow(["IP", "MAC"]) #Headers
             for record in recordList:
                 print('Record: ', record.ip, record.mac)
                 writer.writerow([record.ip, record.mac])

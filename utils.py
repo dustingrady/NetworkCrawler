@@ -4,7 +4,7 @@
 
 import csv
 import configparser
-from netaddr import * #Testing
+from netaddr import *
 
 '''File I/O'''
 class FileIO():
@@ -17,6 +17,7 @@ class FileIO():
         config.read('config.ini')
         configDict['IP_PREFIX'] = config['IP_PREFIX']['OCTET_ONE'], config['IP_PREFIX']['OCTET_TWO']
         configDict['REPORT'] = config['REPORT']['FREQUENCY']
+        configDict['DISCOVERY'] = config['DISCOVERY']['TYPE']
         return configDict
 
     def write_Config(self, configState):
@@ -31,10 +32,10 @@ class FileIO():
     def build_Report(self, recordList):
         with open('records.tsv', 'w') as output:
             writer = csv.writer(output, delimiter='\t')
-            writer.writerow(["IP", "MAC", "OUI"]) #Headers
+            writer.writerow(["IP", "MAC", "TYPE", "OUI"]) #Headers
             for record in recordList:
-                #print('Record: ', record.ip, record.mac, record.oui)
-                writer.writerow([record.ip, record.mac, record.oui])
+                #print('Record: ', record.ip, record.mac, record.type, record.oui)
+                writer.writerow([record.ip, record.mac, record.type, record.oui])
 
 '''Attempt to retrieve information based on MAC address'''
 class MacLookup():

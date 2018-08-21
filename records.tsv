@@ -1,3 +1,9 @@
-IP	MAC	OUI
-10.254.215.182	9e:b6:ea:1f:b4:72	
-10.254.216.183	2c:f0:a2:3f:c4:8a	Apple, Inc.
+IP	MAC	TYPE	OUI
+192.168.1.1	16-91-82-2c-53-51	dynamic	
+192.168.1.105	64-b5-c6-17-3b-46	dynamic	
+192.168.1.123	78-24-af-47-20-83	dynamic	ASUSTek COMPUTER INC.
+192.168.1.147	80-13-82-15-17-82	dynamic	HUAWEI TECHNOLOGIES CO.,LTD
+192.168.1.151	00-17-88-22-4b-4b	dynamic	Philips Lighting BV
+192.168.1.162	a0-8d-16-ff-d4-2a	dynamic	HUAWEI TECHNOLOGIES CO.,LTD
+192.168.1.246	44-09-b8-00-93-68	dynamic	Salcomp (Shenzhen) CO., LTD.
+224.0.0.22	01-00-5e-00-00-16	static	

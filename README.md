@@ -16,9 +16,11 @@ This tool may be suited for:
 #### Future Enhancements
   - Generate periodic reports of network activity (connections/disconnections)
   - Provide more detailed information of discovered devices (OS/ port activity/ etc)
+  - Linux support
 
 #### Tech
-
-NetMon is currently using the following tech:
 * [Tkinter] - Tkinter Graphical libraries to build GUI elements
 * [Python 3] - Python for everything else
+
+#### OS Support
+* Windows

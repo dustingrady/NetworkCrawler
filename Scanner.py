@@ -128,13 +128,11 @@ class NetworkMonitor():
                                 record.mac = arpOutput[i][1]
                                 record.type = arpOutput[i][2]
                                 record.oui = oui
-                                print('Discovered: ', 'IP: ', record.ip, 'MAC: ', record.mac, 'Type: ', record.type, 'Vendor: ', record.oui)
+                                print('Discovered: ', 'IP: ', record.ip, '\tMAC: ', record.mac, '\tType: ', record.type, '\tVendor: ', record.oui)
                                 self.recordList.append(record)
                         FileIO.build_Report(self, self.recordList)  # Testing
                     else:
                         pass
-                        # self.alert_User()
-                        # print(addr, 'is down!', flush=True)
 
                 if scanType == 'Ping':
                     response = os.system('ping -n 1 ' + addr + ' > nul')
@@ -146,13 +144,11 @@ class NetworkMonitor():
                         record.mac = mac
                         record.type = None  # Unavailable for this method
                         record.oui = oui
-                        print(addr, 'is up!', '\tMAC: ', mac, '\tVendor: ', oui, flush=True)
+                        print('Discovered: ', 'IP: ', record.ip, '\tMAC: ', record.mac, '\tVendor: ', record.oui, flush=True)
                         self.recordList.append(record)
                         FileIO.build_Report(self, self.recordList)  # Testing
                     else:
                         pass
-                        # self.alert_User()
-                        # print(addr, 'is down!', flush=True)
             except:
                 print('Error during scan')
             self.addrQueue.put(addr)
@@ -180,8 +176,8 @@ class NetworkMonitor():
             if 0 < int(ip_prefix1) < 256 and 0 < int(ip_prefix2) < 256:
                 configState['OCTET_ONE'] = 'IP_PREFIX', ip_prefix1
                 configState['OCTET_TWO'] = 'IP_PREFIX', ip_prefix2
-                self.addrQueue.queue.clear() #Clear existing queue
-                [self.addrQueue.put(i) for i in[ip_prefix1 + '.' + ip_prefix2 + '.' + str(x) + '.' + str(y) for x in range(0, 256) for y in range(0, 256)]] #Rebuild IP Queue
+                self.addrQueue.queue.clear()  # Clear existing queue
+                [self.addrQueue.put(i) for i in[ip_prefix1 + '.' + ip_prefix2 + '.' + str(x) + '.' + str(y) for x in range(0, 256) for y in range(0, 256)]]  # Rebuild IP Queue
 
             else:
                 print("Please enter valid integers 0 < n < 256")

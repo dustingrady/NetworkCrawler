@@ -112,7 +112,7 @@ class NetworkMonitor():
             addr = self.addrQueue.get()
             try:
                 if scanType == 'ARP':
-                    arpOutput = [] #Move this somewhere outside of loop
+                    arpOutput = []  # Move this somewhere outside of loop(?)
                     response = os.system('ping -n 1 ' + addr + ' > nul')
                     mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
                     if response == 0 and mac:

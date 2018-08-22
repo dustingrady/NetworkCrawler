@@ -2,22 +2,22 @@
 
 ![NetMon](https://i.imgur.com/TEXQeK3.png)
 
-NetMon is a network discovery tool (currently under development) that will scan all addresses within the 16-bit ipv4 scheme (192.168.X.X), and provide alerts to the user when devices dis/connect.
+NetMon is a network discovery tool (currently under development) that attempts to reveal information about connected devices within a network.
 
 This tool may be suited for:
-
   - Systems Administrators
   - Curious folk
 
-### Current Features
-  - Select number of threads to perform ping command (1-128)
+#### Current Features
+  - Multi-threaded (brute force) pinging
+  - ARP (Address Resolution Protocol)
   - Output results to terminal
 
-### Future Enhancements
-  - Generate alerts to user(s) via email
-  - Generate hourly/ daily reports of network activity
+#### Future Enhancements
+  - Generate periodic reports of network activity (connections/disconnections)
+  - Provide more detailed information of discovered devices (OS/ port activity/ etc)
 
-### Tech
+#### Tech
 
 NetMon is currently using the following tech:
 * [Tkinter] - Tkinter Graphical libraries to build GUI elements

@@ -128,7 +128,7 @@ class NetworkMonitor():
                                 record.mac = arpOutput[i][1]
                                 record.type = arpOutput[i][2]
                                 record.oui = oui
-                                print('Discovered: ', 'IP: ', record.ip, '\tMAC: ', record.mac, '\tType: ', record.type, '\tVendor: ', record.oui)
+                                print('Discovered: ', 'IP: ', record.ip, '\tMAC: ', record.mac, '\tType: ', record.type, '\tVendor: ', record.oui, flush=True)
                                 self.recordList.append(record)
                         FileIO.build_Report(self, self.recordList)  # Testing
                     else:

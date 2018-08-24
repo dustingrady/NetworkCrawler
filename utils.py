@@ -3,6 +3,7 @@
 #Status: In development
 
 import csv
+import nmap
 import configparser
 from netaddr import *
 
@@ -38,7 +39,7 @@ class FileIO():
                 writer.writerow([record.ip, record.mac, record.type, record.oui])
 
 '''Attempt to retrieve information based on MAC address'''
-class MacLookup():
+class GetInfo():
     def retrieve_OUI(self, addr):
         mac = EUI(addr)
         try:
@@ -46,6 +47,18 @@ class MacLookup():
         except NotRegisteredError:
             org = None
         return org
+
+    '''Gather information about host Operating System'''
+    def retrieve_OS(self, addr):
+        nm = nmap.PortScanner()
+        os = None
+        try:
+            nm.scan(addr, arguments='-O')
+            if 'osmatch' in nm[addr]:
+                os = nm[addr]['osmatch'][0]['osclass'][0]['osfamily']
+        except KeyError:
+            os = None
+        return os
 
 
 '''Send reports out'''

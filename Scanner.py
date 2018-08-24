@@ -1,10 +1,11 @@
 #Author: Dustin Grady
 #Purpose: Monitor for changes to a network (dis/connections) and alert user.
 #Status: In development
+#To do: Change output formatting to be line by line
 #Bugs:
 
 from getmac import get_mac_address
-from utils import FileIO, MacLookup
+from utils import FileIO, GetInfo
 import tkinter as tk
 import warnings
 import threading
@@ -110,47 +111,60 @@ class NetworkMonitor():
     def scan_Network(self, scanType):
         while not self.addrQueue.empty() and self.runScan:
             addr = self.addrQueue.get()
-            try:
-                if scanType == 'ARP':
-                    arpOutput = []  # Move this somewhere outside of loop(?)
-                    response = os.system('ping -n 1 ' + addr + ' > nul')
-                    mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
-                    if response == 0 and mac:
-                        print('Ping successful, running ARP command..', flush=True)
-                        self.runScan = False  # Stop scan after successful ping
-                        arp = os.popen('arp -a').read()
-                        for i, val in enumerate(arp.split('\n')):
-                            arpOutput.append(val.split())
-                            if len(arpOutput[i]) == 3:
-                                oui = MacLookup.retrieve_OUI(self, arpOutput[i][1])
-                                record = Record()
-                                record.ip = arpOutput[i][0]
-                                record.mac = arpOutput[i][1]
-                                record.type = arpOutput[i][2]
-                                record.oui = oui
-                                print('Discovered: ', 'IP: ', record.ip, '\tMAC: ', record.mac, '\tType: ', record.type, '\tVendor: ', record.oui, flush=True)
-                                self.recordList.append(record)
-                        FileIO.build_Report(self, self.recordList)  # Testing
-                    else:
-                        pass
+            #try:
+            if scanType == 'ARP':
+                arpOutput = []  # Move this somewhere outside of loop(?)
+                response = os.system('ping -n 1 ' + addr + ' > nul')
+                mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
+                if response == 0 and mac:
+                    print('Ping successful, running ARP command..', flush=True)
+                    self.runScan = False  # Stop scan after successful ping
+                    arp = os.popen('arp -a').read()
+                    #op = GetInfo.retrieve_OS(self, addr)
+                    for i, val in enumerate(arp.split('\n')):
+                        arpOutput.append(val.split())
+                        if len(arpOutput[i]) == 3:
+                            oui = GetInfo.retrieve_OUI(self, arpOutput[i][1])
+                            record = Record()
+                            record.ip = arpOutput[i][0]
+                            record.mac = arpOutput[i][1]
+                            record.type = arpOutput[i][2]
+                            record.oui = oui
+                            #record.op = op
+                            print('IP: ', record.ip,
+                                  '\tMAC: ', record.mac,
+                                  '\type: ', record.type,
+                                  '\tVendor: ', record.oui,
+                                  '\tOS: ', record.op,
+                                  flush=True)
+                            self.recordList.append(record)
+                    FileIO.build_Report(self, self.recordList)  # Testing
+                else:
+                    pass
 
-                if scanType == 'Ping':
-                    response = os.system('ping -n 1 ' + addr + ' > nul')
-                    mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
-                    if response == 0 and mac:
-                        oui = MacLookup.retrieve_OUI(self, mac)
-                        record = Record()
-                        record.ip = addr
-                        record.mac = mac
-                        record.type = None  # Unavailable for this method
-                        record.oui = oui
-                        print('Discovered: ', 'IP: ', record.ip, '\tMAC: ', record.mac, '\tVendor: ', record.oui, flush=True)
-                        self.recordList.append(record)
-                        FileIO.build_Report(self, self.recordList)  # Testing
-                    else:
-                        pass
-            except:
-                print('Error during scan')
+            if scanType == 'Ping':
+                response = os.system('ping -n 1 ' + addr + ' > nul')
+                mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
+                #op = GetInfo.retrieve_OS(self, addr)
+                if response == 0 and mac:
+                    oui = GetInfo.retrieve_OUI(self, mac)
+                    record = Record()
+                    record.ip = addr
+                    record.mac = mac
+                    record.type = None  # Unavailable for this method
+                    record.oui = oui
+                    #record.op = op
+                    print('IP: ', record.ip,
+                          '\tMAC: ', record.mac,
+                          '\tVendor: ', record.oui,
+                          '\tOS: ', record.op,
+                          flush=True)
+                    self.recordList.append(record)
+                    FileIO.build_Report(self, self.recordList)  # Testing
+                else:
+                    pass
+            #except:
+            #    print('Error during scan')
             self.addrQueue.put(addr)
 
     '''Create multiple threads to accelerate pinging'''
@@ -200,6 +214,7 @@ class Record():
         self.mac = '00:00:00:00:00:00'
         self.type = None
         self.oui = None
+        self.op = None
 
 
 root = tk.Tk()

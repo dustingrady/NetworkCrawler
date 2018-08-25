@@ -19,6 +19,7 @@ class FileIO():
         configDict['IP_PREFIX'] = config['IP_PREFIX']['OCTET_ONE'], config['IP_PREFIX']['OCTET_TWO']
         configDict['REPORT'] = config['REPORT']['FREQUENCY']
         configDict['DISCOVERY'] = config['DISCOVERY']['TYPE']
+        configDict['THREADS'] = int(config['THREADS']['COUNT'])
         return configDict
 
     def write_Config(self, configState):

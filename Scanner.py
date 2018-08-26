@@ -116,16 +116,20 @@ class NetworkMonitor():
         config_win.transient(self.master)  # Only one window in taskbar
         config_win.grab_set()  # Modal
 
+
     '''Display list of scan results'''
     def results_Window(self):
         results_win = tk.Toplevel()
         self.results_frame = tk.Frame(results_win)
         self.results_frame.pack(side='top')
 
+        self.label = tk.Label(self.results_frame, text="IP\tMAC\tVENDOR", font=('Helvetica', 11))  # Results header
+        self.label.pack(side='top')
+
         self.results_scroll = tk.Scrollbar(self.results_frame, orient='vertical')
         self.results_scroll.pack(side='right', fill='y')
 
-        self.canvas = tk.Canvas(self.results_frame, bd=0)
+        self.canvas = tk.Canvas(self.results_frame, bd=0, width=500)
         self.canvas.pack(fill='both', side='left')
 
         self.viewArea = tk.Frame(self.canvas)
@@ -135,28 +139,22 @@ class NetworkMonitor():
         self.results_scroll.config(command=self.canvas.yview)
         self.canvas.create_window((0, 0), window=self.viewArea, anchor='nw')
 
-        self.viewArea.bind("<Configure>", self.scrollCom)
+        self.viewArea.bind("<Configure>", lambda x: self.canvas.config(scrollregion=self.canvas.bbox("all")))  # Resize scroll region when widget size changes
 
-        self.itemHolder = tk.Frame(self.viewArea)
-        self.itemHolder.pack(side='top')
-
-
-    def scrollCom(self, event):
-        self.canvas.config(scrollregion=self.canvas.bbox("all"))
 
     '''Updates results_Window'''
-    def build_Result(self, record):
-        label = tk.Label(self.viewArea, text=record.ip)
-        label.pack(side='top')
-
-        #self.resultsList.insert('end', start_button)
-        #for record in self.recordList:
-        #    self.resultsList.insert('end', record.ip)
+    def build_Result(self):
+        for i, rec in enumerate(self.recordList):
+            label = tk.Label(self.viewArea, text=str(rec.ip) + '\t' + str(rec.mac) + '\t' + str(rec.oui))
+            details_button = tk.Button(self.viewArea, text="Details", command=lambda i=i : self.details_Window(self.recordList[i]))
+            label.grid(row=i, column=0)
+            details_button.grid(row=i, column=1)
 
 
     '''Show more details of a device'''
-    def details_Window(self):
-        pass
+    def details_Window(self, record):
+        print(record.ip)
+        #Look up OS info, open ports, etc
 
 
     '''Using 16-bit IPv4 scheme (after a successful ping, arp -a command can be run)'''
@@ -172,7 +170,7 @@ class NetworkMonitor():
                     print('Ping successful, running ARP command..', flush=True)
                     self.runScan = False  # Stop scan after successful ping
                     arp = os.popen('arp -a').read()
-                    #op = GetInfo.retrieve_OS(self, addr)
+                    #op = GetInfo.retrieve_OS(self, addr)  # Takes too long
                     for i, val in enumerate(arp.split('\n')):
                         arpOutput.append(val.split())
                         if len(arpOutput[i]) == 3:
@@ -190,6 +188,7 @@ class NetworkMonitor():
                                   '\tOS: ', record.op,
                                   flush=True)
                             self.recordList.append(record)
+                            self.build_Result()
                     FileIO.build_Report(self, self.recordList)
                 else:
                     pass
@@ -197,7 +196,7 @@ class NetworkMonitor():
             if scanType == 'Ping':
                 response = os.system('ping -n 1 ' + addr + ' > nul')
                 mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
-                #op = GetInfo.retrieve_OS(self, addr)
+                #op = GetInfo.retrieve_OS(self, addr)  # Takes too long
                 if response == 0 and mac:
                     oui = GetInfo.retrieve_OUI(self, mac)
                     record = Record()
@@ -212,7 +211,7 @@ class NetworkMonitor():
                           '\tOS: ', record.op,
                           flush=True)
                     self.recordList.append(record)
-                    self.build_Result(record)  # Testing
+                    self.build_Result()
                     FileIO.build_Report(self, self.recordList)
                 else:
                     pass

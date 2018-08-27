@@ -123,32 +123,32 @@ class NetworkMonitor():
         self.results_frame = tk.Frame(results_win)
         self.results_frame.pack(side='top')
 
-        self.label = tk.Label(self.results_frame, text="IP\tMAC\tVENDOR", font=('Helvetica', 11))  # Results header
-        self.label.pack(side='top')
+        self.header_label = tk.Label(self.results_frame, text="IP\t\tMAC\tVENDOR", font=('Helvetica', 11))  # Results header
+        self.header_label.pack(side='top', anchor='w')
 
         self.results_scroll = tk.Scrollbar(self.results_frame, orient='vertical')
         self.results_scroll.pack(side='right', fill='y')
 
-        self.canvas = tk.Canvas(self.results_frame, bd=0, width=500)
-        self.canvas.pack(fill='both', side='left')
+        self.results_canvas = tk.Canvas(self.results_frame, bd=0, width=500) #, width=500
+        self.results_canvas.pack(fill='both', side='left')
 
-        self.viewArea = tk.Frame(self.canvas)
+        self.viewArea = tk.Frame(self.results_canvas)
         self.viewArea.pack(side='top', fill='both')
 
-        self.canvas.config(yscrollcommand=self.results_scroll.set)
-        self.results_scroll.config(command=self.canvas.yview)
-        self.canvas.create_window((0, 0), window=self.viewArea, anchor='nw')
+        self.results_canvas.config(yscrollcommand=self.results_scroll.set)
+        self.results_scroll.config(command=self.results_canvas.yview)
+        self.results_canvas.create_window((0, 0), window=self.viewArea, anchor='nw')
 
-        self.viewArea.bind("<Configure>", lambda x: self.canvas.config(scrollregion=self.canvas.bbox("all")))  # Resize scroll region when widget size changes
+        self.viewArea.bind("<Configure>", lambda x: self.results_canvas.config(scrollregion=self.results_canvas.bbox("all")))  # Resize scroll region when widget size changes
 
 
     '''Updates results_Window'''
     def build_Result(self):
         for i, rec in enumerate(self.recordList):
-            label = tk.Label(self.viewArea, text=str(rec.ip) + '\t' + str(rec.mac) + '\t' + str(rec.oui))
-            details_button = tk.Button(self.viewArea, text="Details", command=lambda i=i : self.details_Window(self.recordList[i]))
-            label.grid(row=i, column=0)
-            details_button.grid(row=i, column=1)
+            rec_label = tk.Label(self.viewArea, text=str(rec.ip) + '\t' + str(rec.mac) + '\t' + str(rec.oui), background='gray80' if i % 2 is 0 else 'gray60') #, background='gray80' if i % 2 is 0 else 'gray60'
+            details_button = tk.Button(self.viewArea, text="Details", command=lambda i=i: self.details_Window(self.recordList[i]))
+            rec_label.grid(row=i, column=0, sticky='ew')
+            details_button.grid(row=i, column=1, sticky='ew')
 
 
     '''Show more details of a device'''

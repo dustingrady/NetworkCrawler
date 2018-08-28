@@ -16,6 +16,7 @@ This tool may be suited for:
 #### Future Enhancements
   - Generate periodic reports of network activity (connections/disconnections)
   - Provide more detailed information of discovered devices (OS/ port activity/ etc)
+  - Give the ability for user to enter a specific IP address/range
   - Linux support
 
 #### Tech

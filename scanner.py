@@ -1,10 +1,6 @@
 #Author: Dustin Grady
 #Purpose: Monitor for changes to a network (dis/connections) and alert user.
 #Status: In development
-#To do:
-    #-Change output formatting to be line by line
-    #-Remove from recordsList if device not found again
-#Bugs:
 
 from getmac import get_mac_address
 from utils import FileIO, GetInfo
@@ -65,7 +61,7 @@ class NetworkMonitor():
         config_win = tk.Toplevel()
         config_frame = tk.Frame(config_win)
         config_win.wm_title("Configuration")
-        config_label = tk.Label(config_frame, text="<<<Configuration>>>").pack(side='top')
+        config_label = tk.Label(config_frame, text="======Configuration======").pack(side='top')
         config_frame.grid(row=0, column=0)
         config_win.resizable(False, False)
 
@@ -166,6 +162,15 @@ class NetworkMonitor():
 
     '''Show more details of a device'''
     def details_Window(self, record):
+        details_win = tk.Toplevel()
+        details_win.title('Details')
+
+        details_frame = tk.Frame(details_win)
+        details_frame.pack(side='top')
+
+        details_win.grab_set()  # Modal
+        details_win.resizable(False, False)
+        details_win.geometry('100x100')
         print(record.ip)
         #Look up OS info, open ports, etc
 

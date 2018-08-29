@@ -145,21 +145,14 @@ class GUI:
             ip_label = tk.Label(self.viewArea, text=str(rec.ip), background='gray80' if i % 2 is 0 else 'gray60')
             mac_label = tk.Label(self.viewArea, text=str(rec.mac), background='gray80' if i % 2 is 0 else 'gray60')
             oui_label = tk.Label(self.viewArea, text=str(rec.oui), background='gray80' if i % 2 is 0 else 'gray60')
-            details_button = tk.Button(self.viewArea, text="Details",
-                                       command=lambda i=i: GUI.details_Window(self, self.recordList[i]))
+            details_button = tk.Button(self.viewArea, text="Details", command=lambda i=i: GUI.details_Window(self, self.recordList[i]))
 
             ip_label.grid(row=i, column=0, sticky='ew')
             mac_label.grid(row=i, column=1, sticky='ew')
             oui_label.grid(row=i, column=2, sticky='ew')
             details_button.grid(row=i, column=3, sticky='ew')
 
-            # rec_label = tk.Label(self.viewArea, text=str(rec.ip) + '\t' + str(rec.mac) + '\t' + str(rec.oui), background='gray80' if i % 2 is 0 else 'gray60') #, background='gray80' if i % 2 is 0 else 'gray60'
-            # details_button = tk.Button(self.viewArea, text="Details", command=lambda i=i: self.details_Window(self.recordList[i]))
-            # rec_label.grid(row=i, column=0, sticky='w')
-            # details_button.grid(row=i, column=1, sticky='w')
-
     '''Show more details of a device'''
-
     def details_Window(self, record):
         details_win = tk.Toplevel()
         details_win.title('Details')
@@ -172,7 +165,6 @@ class GUI:
         details_win.geometry('100x100')
         print(record.ip)
         # Look up OS info, open ports, etc
-
 
 class NetworkMonitor:
     warnings.filterwarnings("ignore")  # Ignore warning from get-mac lib
@@ -190,63 +182,62 @@ class NetworkMonitor:
     def scan_Network(self, scanType):
         while not self.addrQueue.empty() and self.runScan:
             addr = self.addrQueue.get()
-            print(addr)
-            #try:
-            if scanType == 'ARP':
-                arpOutput = []  # Move this somewhere outside of loop(?)
-                response = os.system('ping -n 1 ' + addr + ' > nul')
-                mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
-                if response == 0 and mac:
-                    print('Ping successful, running ARP command..', flush=True)
-                    self.runScan = False  # Stop scan after successful ping
-                    arp = os.popen('arp -a').read()
-                    #op = GetInfo.retrieve_OS(self, addr)  # Takes too long
-                    for i, val in enumerate(arp.split('\n')):
-                        arpOutput.append(val.split())
-                        if len(arpOutput[i]) == 3:
-                            oui = GetInfo.retrieve_OUI(self, arpOutput[i][1])
-                            record = Record()
-                            record.ip = arpOutput[i][0]
-                            record.mac = arpOutput[i][1]
-                            record.type = arpOutput[i][2]
-                            record.oui = oui
-                            #record.op = op
-                            print('IP: ', record.ip,
-                                  '\tMAC: ', record.mac,
-                                  '\type: ', record.type,
-                                  '\tVendor: ', record.oui,
-                                  '\tOS: ', record.op,
-                                  flush=True)
-                            self.recordList.append(record)
-                            GUI.build_Result(self)
-                    FileIO.build_Report(self, self.recordList)
-                else:
-                    pass
+            try:
+                if scanType == 'ARP':
+                    arpOutput = []  # Move this somewhere outside of loop(?)
+                    response = os.system('ping -n 1 ' + addr + ' > nul')
+                    mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
+                    if response == 0 and mac:
+                        print('Ping successful, running ARP command..', flush=True)
+                        self.runScan = False  # Stop scan after successful ping
+                        arp = os.popen('arp -a').read()
+                        #op = GetInfo.retrieve_OS(self, addr)  # Takes too long
+                        for i, val in enumerate(arp.split('\n')):
+                            arpOutput.append(val.split())
+                            if len(arpOutput[i]) == 3:
+                                oui = GetInfo.retrieve_OUI(self, arpOutput[i][1])
+                                record = Record()
+                                record.ip = arpOutput[i][0]
+                                record.mac = arpOutput[i][1]
+                                record.type = arpOutput[i][2]
+                                record.oui = oui
+                                #record.op = op
+                                print('IP: ', record.ip,
+                                      '\tMAC: ', record.mac,
+                                      '\type: ', record.type,
+                                      '\tVendor: ', record.oui,
+                                      '\tOS: ', record.op,
+                                      flush=True)
+                                self.recordList.append(record)
+                                GUI.build_Result(self)
+                        FileIO.build_Report(self, self.recordList)
+                    else:
+                        pass
 
-            if scanType == 'Ping':
-                response = os.system('ping -n 1 ' + addr + ' > nul')
-                mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
-                #op = GetInfo.retrieve_OS(self, addr)  # Takes too long
-                if response == 0 and mac:
-                    oui = GetInfo.retrieve_OUI(self, mac)
-                    record = Record()
-                    record.ip = addr
-                    record.mac = mac
-                    record.type = None  # Unavailable for this method
-                    record.oui = oui
-                    #record.op = op
-                    print('IP: ', record.ip,
-                          '\tMAC: ', record.mac,
-                          '\tVendor: ', record.oui,
-                          '\tOS: ', record.op,
-                          flush=True)
-                    self.recordList.append(record)
-                    GUI.build_Result(self)
-                    FileIO.build_Report(self, self.recordList)
-                else:
-                    pass
-            #except:
-            #    print('Error during scan')
+                if scanType == 'Ping':
+                    response = os.system('ping -n 1 ' + addr + ' > nul')
+                    mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
+                    #op = GetInfo.retrieve_OS(self, addr)  # Takes too long
+                    if response == 0 and mac:
+                        oui = GetInfo.retrieve_OUI(self, mac)
+                        record = Record()
+                        record.ip = addr
+                        record.mac = mac
+                        record.type = None  # Unavailable for this method
+                        record.oui = oui
+                        #record.op = op
+                        print('IP: ', record.ip,
+                              '\tMAC: ', record.mac,
+                              '\tVendor: ', record.oui,
+                              '\tOS: ', record.op,
+                              flush=True)
+                        self.recordList.append(record)
+                        GUI.build_Result(self)
+                        FileIO.build_Report(self, self.recordList)
+                    else:
+                        pass
+            except:
+                print('Error during scan')
             self.addrQueue.put(addr)
 
 
@@ -261,50 +252,24 @@ class NetworkMonitor:
             self.threads['thread' + str(i)] = threading.Thread(target=lambda: NetworkMonitor.scan_Network(self, scanType))  # Create thread
             self.threads['thread' + str(i)].start()  # Start thread
 
-
     '''Cancel current scan'''
     def stop_Scan(self):
         print('Stopping scan..', flush=True)
         self.runScan = False
         #self.master.quit()
 
-
-    '''Update config.ini (perform checks on values here?)'''
-    '''
-    def save_Config(self, ip_prefix1, ip_prefix2, report_freq, disc_choice, thread_count):
-        configState = {}
-        try:
-            if 0 < int(ip_prefix1) < 256 and 0 < int(ip_prefix2) < 256:
-                configState['OCTET_ONE'] = 'IP_PREFIX', ip_prefix1
-                configState['OCTET_TWO'] = 'IP_PREFIX', ip_prefix2
-                self.addrQueue.queue.clear()  # Clear existing queue
-                [self.addrQueue.put(i) for i in[ip_prefix1 + '.' + ip_prefix2 + '.' + str(x) + '.' + str(y) for x in range(0, 256) for y in range(0, 256)]]  # Rebuild IP Queue
-
-            else:
-                print("Please enter valid integers 0 < n < 256")
-            configState['FREQUENCY'] = 'REPORT', report_freq
-            configState['TYPE'] = 'DISCOVERY', disc_choice
-            configState['COUNT'] = 'THREADS', thread_count
-            FileIO.write_Config(self, configState)  # Combine this with FileIO.write_Config?
-            self.config = FileIO.read_Config(self)  # Read changes back
-        except:
-            print('Error while saving')
-    '''
-
     '''Send email to user'''
     def alert_User(self):
         print("Emailing user..")
 
-
 '''Record object'''
-class Record():
+class Record:
     def __init__(self):
         self.ip = '0.0.0.0'
         self.mac = '00:00:00:00:00:00'
         self.type = 'Unknown'
         self.oui = 'Unknown'
         self.op = 'Unknown'
-
 
 root = tk.Tk()
 app = GUI(root)

@@ -9,7 +9,7 @@ import configparser
 from netaddr import *
 
 '''File I/O'''
-class FileIO():
+class FileIO:
 
     def read_Config(self):
         configDict = {}
@@ -65,7 +65,7 @@ class FileIO():
                 writer.writerow([record.ip, record.mac, record.type, record.oui])
 
 '''Attempt to retrieve information based on MAC address'''
-class GetInfo():
+class GetInfo:
     def retrieve_OUI(self, addr):
         mac = EUI(addr)
         try:
@@ -88,7 +88,7 @@ class GetInfo():
 
 
 '''Send reports out'''
-class GenerateEmail():
+class GenerateEmail:
 
     def send_Email(self):
         pass

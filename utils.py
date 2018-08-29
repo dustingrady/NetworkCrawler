@@ -3,31 +3,56 @@
 #Status: In development
 
 import csv
+import sys
 import nmap
 import configparser
 from netaddr import *
 
 '''File I/O'''
 class FileIO():
-    def __init__(self):
-        pass
 
     def read_Config(self):
         configDict = {}
         config = configparser.ConfigParser()
-        config.read('config.ini')
-        configDict['IP_PREFIX'] = config['IP_PREFIX']['OCTET_ONE'], config['IP_PREFIX']['OCTET_TWO']
-        configDict['REPORT'] = config['REPORT']['FREQUENCY']
-        configDict['DISCOVERY'] = config['DISCOVERY']['TYPE']
-        configDict['THREADS'] = int(config['THREADS']['COUNT'])
+        try:
+            config.read('config.ini')
+            configDict['IP_PREFIX'] = config['IP_PREFIX']['OCTET_ONE'], config['IP_PREFIX']['OCTET_TWO']
+            configDict['REPORT'] = config['REPORT']['FREQUENCY']
+            configDict['DISCOVERY'] = config['DISCOVERY']['TYPE']
+            configDict['THREADS'] = int(config['THREADS']['COUNT'])
+        except:
+            print("Error reading config.")
+            sys.exit(1)
+
         return configDict
+
+    '''Update config.ini (perform checks on values here?)'''
+    def save_Config(self, ip_prefix1, ip_prefix2, report_freq, disc_choice, thread_count):
+        configState = {}
+        #try:
+        if 0 < int(ip_prefix1) < 256 and 0 < int(ip_prefix2) < 256:
+            configState['OCTET_ONE'] = 'IP_PREFIX', ip_prefix1
+            configState['OCTET_TWO'] = 'IP_PREFIX', ip_prefix2
+            #self.addrQueue.queue.clear()  # Clear existing queue
+            #[self.addrQueue.put(i) for i in
+            # [ip_prefix1 + '.' + ip_prefix2 + '.' + str(x) + '.' + str(y) for x in range(0, 256) for y in
+            #  range(0, 256)]]  # Rebuild IP Queue
+
+        else:
+            print("Please enter valid integers 0 < n < 256")
+        configState['FREQUENCY'] = 'REPORT', report_freq
+        configState['TYPE'] = 'DISCOVERY', disc_choice
+        configState['COUNT'] = 'THREADS', thread_count
+        FileIO.write_Config(self, configState)
+        self.config = FileIO.read_Config(self)  # Read back changes
+        #except:
+        #    print('Error while saving')
 
     def write_Config(self, configState):
         config = configparser.ConfigParser()
         config.read('config.ini')
         for key in configState:
             config.set(str(configState[key][0]), str(key), str(configState[key][1]))
-
         with open('config.ini', 'w+') as configFile:
             config.write(configFile)
 
@@ -64,8 +89,6 @@ class GetInfo():
 
 '''Send reports out'''
 class GenerateEmail():
-    def __init__(self):
-        pass
 
     def send_Email(self):
         pass

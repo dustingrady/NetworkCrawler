@@ -10,23 +10,14 @@ import threading
 import queue
 import os
 
-class NetworkMonitor():
-    warnings.filterwarnings("ignore")  # Ignore warning from get-mac lib
-
+class GUI:
     def __init__(self, master):
         self.master = master
-        master.title('Net Discovery Tool v0.1')
-        self.runScan = True
-        self.MAX_THREADS = 128
-        self.addrQueue = queue.Queue()
-        self.config = FileIO.read_Config(self)
-        [self.addrQueue.put(i) for i in[self.config['IP_PREFIX'][0] +'.'+ self.config['IP_PREFIX'][1] +'.'+ str(x) + '.' + str(y) for x in range(0, 256) for y in range(0, 256)]]
-        self.recordList = []
-        self.resultsList = tk.Listbox
+        self.master.title('Net Discovery Tool v0.1')
         self.build_GUI()
+        self.config = FileIO.read_Config(self)
+        self.netMon = NetworkMonitor()
 
-
-    '''Draw GUI elements'''
     def build_GUI(self):
         ''''File menu'''''
         menubar = tk.Menu(root)
@@ -40,23 +31,26 @@ class NetworkMonitor():
 
         '''Start/Stop buttons'''
         button_frame = tk.Frame(self.master)
-        start_button = tk.Button(button_frame, text="Start", command=lambda: self.start_Scan(self.config['THREADS'])).pack(side='left')
-        stop_button = tk.Button(button_frame, text="Stop", command=lambda: self.stop_Scan()).pack(side='left')
+        start_button = tk.Button(button_frame, text="Start",
+                                 command=lambda: self.netMon.start_Scan(self.config['THREADS'])).pack(side='left')
+        stop_button = tk.Button(button_frame, text="Stop", command=lambda: self.netMon.stop_Scan()).pack(side='left')
         button_frame.grid(row=0, column=1, padx='120', pady='75')
 
     '''Program description window'''
+
     def about_Window(self):
         about_win = tk.Toplevel()
         about_win.wm_title("About")
-        about_label = tk.Label(about_win, text="NetMon 2018\n A multithreaded pinging tool designed to monitor for\n new connections to a network and generate basic reports.")
+        about_label = tk.Label(about_win,
+                               text="NetMon 2018\n A multithreaded pinging tool designed to monitor for\n new connections to a network and generate basic reports.")
         about_label.grid(row=0, column=0)
         about_win.geometry('325x70')
         about_win.transient(self.master)  # Only one window in taskbar
         about_win.grab_set()  # Modal
         about_win.resizable(False, False)
 
-
     '''Provides r/w access to config.ini'''
+
     def config_Window(self):
         config_win = tk.Toplevel()
         config_frame = tk.Frame(config_win)
@@ -99,45 +93,49 @@ class NetworkMonitor():
         '''Thread Slider'''
         thread_frame = tk.Frame(config_win)
         thread_label = tk.Label(thread_frame, text="Threads").pack(side='left')
-        thread_slider = tk.Scale(thread_frame, from_=8, to=self.MAX_THREADS, resolution=8, length=150, orient='horizontal')
+        thread_slider = tk.Scale(thread_frame, from_=8, to=self.netMon.MAX_THREADS, resolution=8, length=150,
+                                 orient='horizontal')
         thread_slider.set(self.config['THREADS'])
         thread_slider.pack(side='left')
         thread_frame.grid(row=5, column=0, sticky='w')
 
         '''Save Button'''
         save_button = tk.Button(config_win, text="Save", command=lambda: (
-        self.save_Config(prefix1_val.get(), prefix2_val.get(), freq_choice.get(), disc_choice.get(), thread_slider.get()), config_win.destroy()))  # Could probably be cleaned up
+            FileIO.save_Config(self, prefix1_val.get(), prefix2_val.get(), freq_choice.get(), disc_choice.get(),
+                             thread_slider.get()), config_win.destroy()))  # Could probably be cleaned up
         save_button.grid(row=6, column=0)
 
         config_win.transient(self.master)  # Only one window in taskbar
         config_win.grab_set()  # Modal
 
-
     '''Display list of scan results'''
+
     def results_Window(self):
         results_win = tk.Toplevel()
         results_win.title('Results')
 
-        self.results_frame = tk.Frame(results_win)
-        self.results_frame.pack(side='top')
+        results_frame = tk.Frame(results_win)
+        results_frame.pack(side='top')
 
-        self.header_label = tk.Label(self.results_frame, text="IP\tMAC\tVENDOR", font=('Helvetica', 11))  # Results header
-        self.header_label.pack(side='top', anchor='w')
+        header_label = tk.Label(results_frame, text="IP\tMAC\tVENDOR",
+                                     font=('Helvetica', 11))  # Results header
+        header_label.pack(side='top', anchor='w')
 
-        self.results_scroll = tk.Scrollbar(self.results_frame, orient='vertical')
-        self.results_scroll.pack(side='right', fill='y')
+        results_scroll = tk.Scrollbar(results_frame, orient='vertical')
+        results_scroll.pack(side='right', fill='y')
 
-        self.results_canvas = tk.Canvas(self.results_frame, bd=0, width=500) #, width=500
-        self.results_canvas.pack(fill='both', side='left')
+        results_canvas = tk.Canvas(results_frame, bd=0, width=500)  # , width=500
+        results_canvas.pack(fill='both', side='left')
 
-        self.viewArea = tk.Frame(self.results_canvas)
+        self.viewArea = tk.Frame(results_canvas)
         self.viewArea.pack(side='top', fill='both')
 
-        self.results_canvas.config(yscrollcommand=self.results_scroll.set)
-        self.results_scroll.config(command=self.results_canvas.yview)
-        self.results_canvas.create_window((0, 0), window=self.viewArea, anchor='nw')
+        results_canvas.config(yscrollcommand=results_scroll.set)
+        results_scroll.config(command=results_canvas.yview)
+        results_canvas.create_window((0, 0), window=self.viewArea, anchor='nw')
 
-        self.viewArea.bind("<Configure>", lambda x: self.results_canvas.config(scrollregion=self.results_canvas.bbox("all")))  # Resize scroll region when widget size changes
+        self.viewArea.bind("<Configure>", lambda x: results_canvas.config(
+            scrollregion=results_canvas.bbox("all")))  # Resize scroll region when widget size changes
         results_win.grab_set()  # Modal
         results_win.resizable(False, False)
 
@@ -147,20 +145,21 @@ class NetworkMonitor():
             ip_label = tk.Label(self.viewArea, text=str(rec.ip), background='gray80' if i % 2 is 0 else 'gray60')
             mac_label = tk.Label(self.viewArea, text=str(rec.mac), background='gray80' if i % 2 is 0 else 'gray60')
             oui_label = tk.Label(self.viewArea, text=str(rec.oui), background='gray80' if i % 2 is 0 else 'gray60')
-            details_button = tk.Button(self.viewArea, text="Details", command=lambda i=i: self.details_Window(self.recordList[i]))
+            details_button = tk.Button(self.viewArea, text="Details",
+                                       command=lambda i=i: GUI.details_Window(self, self.recordList[i]))
 
             ip_label.grid(row=i, column=0, sticky='ew')
             mac_label.grid(row=i, column=1, sticky='ew')
             oui_label.grid(row=i, column=2, sticky='ew')
             details_button.grid(row=i, column=3, sticky='ew')
 
-            #rec_label = tk.Label(self.viewArea, text=str(rec.ip) + '\t' + str(rec.mac) + '\t' + str(rec.oui), background='gray80' if i % 2 is 0 else 'gray60') #, background='gray80' if i % 2 is 0 else 'gray60'
-            #details_button = tk.Button(self.viewArea, text="Details", command=lambda i=i: self.details_Window(self.recordList[i]))
-            #rec_label.grid(row=i, column=0, sticky='w')
-            #details_button.grid(row=i, column=1, sticky='w')
-
+            # rec_label = tk.Label(self.viewArea, text=str(rec.ip) + '\t' + str(rec.mac) + '\t' + str(rec.oui), background='gray80' if i % 2 is 0 else 'gray60') #, background='gray80' if i % 2 is 0 else 'gray60'
+            # details_button = tk.Button(self.viewArea, text="Details", command=lambda i=i: self.details_Window(self.recordList[i]))
+            # rec_label.grid(row=i, column=0, sticky='w')
+            # details_button.grid(row=i, column=1, sticky='w')
 
     '''Show more details of a device'''
+
     def details_Window(self, record):
         details_win = tk.Toplevel()
         details_win.title('Details')
@@ -172,13 +171,26 @@ class NetworkMonitor():
         details_win.resizable(False, False)
         details_win.geometry('100x100')
         print(record.ip)
-        #Look up OS info, open ports, etc
+        # Look up OS info, open ports, etc
 
+
+class NetworkMonitor:
+    warnings.filterwarnings("ignore")  # Ignore warning from get-mac lib
+
+    def __init__(self):
+        self.runScan = True
+        self.MAX_THREADS = 128
+        self.config = FileIO.read_Config(self)
+        self.addrQueue = queue.Queue()
+        [self.addrQueue.put(i) for i in[self.config['IP_PREFIX'][0] +'.'+ self.config['IP_PREFIX'][1] +'.'+ str(x) + '.' + str(y) for x in range(0, 256) for y in range(0, 256)]]
+        self.recordList = []
+        self.resultsList = tk.Listbox
 
     '''Using 16-bit IPv4 scheme (after a successful ping, arp -a command can be run)'''
     def scan_Network(self, scanType):
         while not self.addrQueue.empty() and self.runScan:
             addr = self.addrQueue.get()
+            print(addr)
             #try:
             if scanType == 'ARP':
                 arpOutput = []  # Move this somewhere outside of loop(?)
@@ -206,7 +218,7 @@ class NetworkMonitor():
                                   '\tOS: ', record.op,
                                   flush=True)
                             self.recordList.append(record)
-                            self.build_Result()
+                            GUI.build_Result(self)
                     FileIO.build_Report(self, self.recordList)
                 else:
                     pass
@@ -229,7 +241,7 @@ class NetworkMonitor():
                           '\tOS: ', record.op,
                           flush=True)
                     self.recordList.append(record)
-                    self.build_Result()
+                    GUI.build_Result(self)
                     FileIO.build_Report(self, self.recordList)
                 else:
                     pass
@@ -240,13 +252,13 @@ class NetworkMonitor():
 
     '''Create multiple threads to accelerate pinging'''
     def start_Scan(self, threadCount):
-        self.results_Window()  # Bring up results window
+        GUI.results_Window(self)  # Bring up results window
         scanType = self.config['DISCOVERY']
         print('Discovering devices via brute force ping' if scanType == 'Ping' else 'Displaying Address Resolution Protocol (ARP) Table', flush=True)
         self.runScan = True
         self.threads = {}
         for i in range(0, threadCount):
-            self.threads['thread' + str(i)] = threading.Thread(target=lambda: self.scan_Network(scanType))  # Create thread
+            self.threads['thread' + str(i)] = threading.Thread(target=lambda: NetworkMonitor.scan_Network(self, scanType))  # Create thread
             self.threads['thread' + str(i)].start()  # Start thread
 
 
@@ -258,6 +270,7 @@ class NetworkMonitor():
 
 
     '''Update config.ini (perform checks on values here?)'''
+    '''
     def save_Config(self, ip_prefix1, ip_prefix2, report_freq, disc_choice, thread_count):
         configState = {}
         try:
@@ -276,7 +289,7 @@ class NetworkMonitor():
             self.config = FileIO.read_Config(self)  # Read changes back
         except:
             print('Error while saving')
-
+    '''
 
     '''Send email to user'''
     def alert_User(self):
@@ -294,7 +307,7 @@ class Record():
 
 
 root = tk.Tk()
-app = NetworkMonitor(root)
+app = GUI(root)
 root.geometry('300x100')
 root.resizable(False, False)
 root.mainloop()

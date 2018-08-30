@@ -11,7 +11,7 @@ from netaddr import *
 '''File I/O'''
 class FileIO:
 
-    def read_Config(self):
+    def read_config(self):
         configDict = {}
         config = configparser.ConfigParser()
         try:
@@ -27,7 +27,7 @@ class FileIO:
         return configDict
 
     '''Update config.ini (perform checks on values here?)'''
-    def save_Config(self, ip_prefix1, ip_prefix2, report_freq, disc_choice, thread_count):
+    def save_config(self, ip_prefix1, ip_prefix2, report_freq, disc_choice, thread_count):
         configState = {}
         #try:
         if 0 < int(ip_prefix1) < 256 and 0 < int(ip_prefix2) < 256:
@@ -43,12 +43,12 @@ class FileIO:
         configState['FREQUENCY'] = 'REPORT', report_freq
         configState['TYPE'] = 'DISCOVERY', disc_choice
         configState['COUNT'] = 'THREADS', thread_count
-        FileIO.write_Config(self, configState)
-        self.config = FileIO.read_Config(self)  # Read back changes
+        FileIO.write_config(self, configState)
+        self.config = FileIO.read_config(self)  # Read back changes
         #except:
         #    print('Error while saving')
 
-    def write_Config(self, configState):
+    def write_config(self, configState):
         config = configparser.ConfigParser()
         config.read('config.ini')
         for key in configState:
@@ -56,7 +56,7 @@ class FileIO:
         with open('config.ini', 'w+') as configFile:
             config.write(configFile)
 
-    def build_Report(self, recordList):
+    def build_report(self, recordList):
         with open('records.tsv', 'w') as output:
             writer = csv.writer(output, delimiter='\t')
             writer.writerow(["IP", "MAC", "TYPE", "OUI"]) #Headers
@@ -66,7 +66,7 @@ class FileIO:
 
 '''Attempt to retrieve information based on MAC address'''
 class GetInfo:
-    def retrieve_OUI(self, addr):
+    def retrieve_oui(self, addr):
         mac = EUI(addr)
         try:
             org = mac.oui.registration().org
@@ -75,7 +75,7 @@ class GetInfo:
         return org
 
     '''Gather information about host Operating System'''
-    def retrieve_OS(self, addr):
+    def retrieve_os(self, addr):
         nm = nmap.PortScanner()
         os = None
         try:

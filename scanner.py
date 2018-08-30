@@ -14,16 +14,16 @@ class GUI:
     def __init__(self, master):
         self.master = master
         self.master.title('Net Discovery Tool v0.1')
-        self.build_GUI()
-        self.config = FileIO.read_Config(self)
+        self.build_gui()
+        self.config = FileIO.read_config(self)
         self.netMon = NetworkMonitor()
 
-    def build_GUI(self):
+    def build_gui(self):
         ''''File menu'''''
         menubar = tk.Menu(root)
         file_menu = tk.Menu(menubar, tearoff=0)
-        file_menu.add_command(label="Configure", command=self.config_Window)
-        file_menu.add_command(label="About", command=self.about_Window)
+        file_menu.add_command(label="Configure", command=self.config_window)
+        file_menu.add_command(label="About", command=self.about_window)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=root.quit)
         menubar.add_cascade(label="File", menu=file_menu)
@@ -32,13 +32,13 @@ class GUI:
         '''Start/Stop buttons'''
         button_frame = tk.Frame(self.master)
         start_button = tk.Button(button_frame, text="Start",
-                                 command=lambda: self.netMon.start_Scan(self.config['THREADS'])).pack(side='left')
-        stop_button = tk.Button(button_frame, text="Stop", command=lambda: self.netMon.stop_Scan()).pack(side='left')
+                                 command=lambda: self.netMon.start_scan(self.config['THREADS'])).pack(side='left')
+        stop_button = tk.Button(button_frame, text="Stop", command=lambda: self.netMon.stop_scan()).pack(side='left')
         button_frame.grid(row=0, column=1, padx='120', pady='75')
 
     '''Program description window'''
 
-    def about_Window(self):
+    def about_window(self):
         about_win = tk.Toplevel()
         about_win.wm_title("About")
         about_label = tk.Label(about_win,
@@ -51,7 +51,7 @@ class GUI:
 
     '''Provides r/w access to config.ini'''
 
-    def config_Window(self):
+    def config_window(self):
         config_win = tk.Toplevel()
         config_frame = tk.Frame(config_win)
         config_win.wm_title("Configuration")
@@ -101,7 +101,7 @@ class GUI:
 
         '''Save Button'''
         save_button = tk.Button(config_win, text="Save", command=lambda: (
-            FileIO.save_Config(self, prefix1_val.get(), prefix2_val.get(), freq_choice.get(), disc_choice.get(),
+            FileIO.save_config(self, prefix1_val.get(), prefix2_val.get(), freq_choice.get(), disc_choice.get(),
                              thread_slider.get()), config_win.destroy()))  # Could probably be cleaned up
         save_button.grid(row=6, column=0)
 
@@ -110,7 +110,7 @@ class GUI:
 
     '''Display list of scan results'''
 
-    def results_Window(self):
+    def results_window(self):
         results_win = tk.Toplevel()
         results_win.title('Results')
 
@@ -139,13 +139,13 @@ class GUI:
         results_win.grab_set()  # Modal
         results_win.resizable(False, False)
 
-    '''Updates results_Window'''
-    def build_Result(self):
-        for i, rec in enumerate(self.recordList):
+    '''Updates results_window'''
+    def build_result(self):
+        for i, rec in enumerate(self.record_list):
             ip_label = tk.Label(self.viewArea, text=str(rec.ip), background='gray80' if i % 2 is 0 else 'gray60')
             mac_label = tk.Label(self.viewArea, text=str(rec.mac), background='gray80' if i % 2 is 0 else 'gray60')
             oui_label = tk.Label(self.viewArea, text=str(rec.oui), background='gray80' if i % 2 is 0 else 'gray60')
-            details_button = tk.Button(self.viewArea, text="Details", command=lambda i=i: GUI.details_Window(self, self.recordList[i]))
+            details_button = tk.Button(self.viewArea, text="Details", command=lambda i=i: GUI.details_window(self, self.record_list[i]))
 
             ip_label.grid(row=i, column=0, sticky='ew')
             mac_label.grid(row=i, column=1, sticky='ew')
@@ -153,7 +153,7 @@ class GUI:
             details_button.grid(row=i, column=3, sticky='ew')
 
     '''Show more details of a device'''
-    def details_Window(self, record):
+    def details_window(self, record):
         details_win = tk.Toplevel()
         details_win.title('Details')
 
@@ -172,16 +172,16 @@ class NetworkMonitor:
     def __init__(self):
         self.runScan = True
         self.MAX_THREADS = 128
-        self.config = FileIO.read_Config(self)
-        self.addrQueue = queue.Queue()
-        [self.addrQueue.put(i) for i in[self.config['IP_PREFIX'][0] +'.'+ self.config['IP_PREFIX'][1] +'.'+ str(x) + '.' + str(y) for x in range(0, 256) for y in range(0, 256)]]
-        self.recordList = []
+        self.config = FileIO.read_config(self)
+        self.addr_queue = queue.Queue()
+        [self.addr_queue.put(i) for i in[self.config['IP_PREFIX'][0] +'.'+ self.config['IP_PREFIX'][1] +'.'+ str(x) + '.' + str(y) for x in range(0, 256) for y in range(0, 256)]]
+        self.record_list = []
         self.resultsList = tk.Listbox
 
     '''Using 16-bit IPv4 scheme (after a successful ping, arp -a command can be run)'''
-    def scan_Network(self, scanType):
-        while not self.addrQueue.empty() and self.runScan:
-            addr = self.addrQueue.get()
+    def scan_network(self, scanType):
+        while not self.addr_queue.empty() and self.runScan:
+            addr = self.addr_queue.get()
             try:
                 if scanType == 'ARP':
                     arpOutput = []  # Move this somewhere outside of loop(?)
@@ -191,11 +191,11 @@ class NetworkMonitor:
                         print('Ping successful, running ARP command..', flush=True)
                         self.runScan = False  # Stop scan after successful ping
                         arp = os.popen('arp -a').read()
-                        #op = GetInfo.retrieve_OS(self, addr)  # Takes too long
+                        #op = GetInfo.retrieve_os(self, addr)  # Takes too long
                         for i, val in enumerate(arp.split('\n')):
                             arpOutput.append(val.split())
                             if len(arpOutput[i]) == 3:
-                                oui = GetInfo.retrieve_OUI(self, arpOutput[i][1])
+                                oui = GetInfo.retrieve_oui(self, arpOutput[i][1])
                                 record = Record()
                                 record.ip = arpOutput[i][0]
                                 record.mac = arpOutput[i][1]
@@ -208,18 +208,18 @@ class NetworkMonitor:
                                       '\tVendor: ', record.oui,
                                       '\tOS: ', record.op,
                                       flush=True)
-                                self.recordList.append(record)
-                                GUI.build_Result(self)
-                        FileIO.build_Report(self, self.recordList)
+                                self.record_list.append(record)
+                                GUI.build_result(self)
+                        FileIO.build_Report(self, self.record_list)
                     else:
                         pass
 
                 if scanType == 'Ping':
                     response = os.system('ping -n 1 ' + addr + ' > nul')
                     mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
-                    #op = GetInfo.retrieve_OS(self, addr)  # Takes too long
+                    #op = GetInfo.retrieve_os(self, addr)  # Takes too long
                     if response == 0 and mac:
-                        oui = GetInfo.retrieve_OUI(self, mac)
+                        oui = GetInfo.retrieve_oui(self, mac)
                         record = Record()
                         record.ip = addr
                         record.mac = mac
@@ -231,35 +231,35 @@ class NetworkMonitor:
                               '\tVendor: ', record.oui,
                               '\tOS: ', record.op,
                               flush=True)
-                        self.recordList.append(record)
-                        GUI.build_Result(self)
-                        FileIO.build_Report(self, self.recordList)
+                        self.record_list.append(record)
+                        GUI.build_result(self)
+                        FileIO.build_Report(self, self.record_list)
                     else:
                         pass
             except:
                 print('Error during scan')
-            self.addrQueue.put(addr)
+            self.addr_queue.put(addr)
 
 
     '''Create multiple threads to accelerate pinging'''
-    def start_Scan(self, threadCount):
-        GUI.results_Window(self)  # Bring up results window
+    def start_scan(self, threadCount):
+        GUI.results_window(self)  # Bring up results window
         scanType = self.config['DISCOVERY']
         print('Discovering devices via brute force ping' if scanType == 'Ping' else 'Displaying Address Resolution Protocol (ARP) Table', flush=True)
         self.runScan = True
         self.threads = {}
         for i in range(0, threadCount):
-            self.threads['thread' + str(i)] = threading.Thread(target=lambda: NetworkMonitor.scan_Network(self, scanType))  # Create thread
+            self.threads['thread' + str(i)] = threading.Thread(target=lambda: NetworkMonitor.scan_network(self, scanType))  # Create thread
             self.threads['thread' + str(i)].start()  # Start thread
 
     '''Cancel current scan'''
-    def stop_Scan(self):
+    def stop_scan(self):
         print('Stopping scan..', flush=True)
         self.runScan = False
         #self.master.quit()
 
     '''Send email to user'''
-    def alert_User(self):
+    def alert_user(self):
         print("Emailing user..")
 
 '''Record object'''

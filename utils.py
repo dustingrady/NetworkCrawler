@@ -6,7 +6,7 @@ import csv
 import sys
 import nmap
 import configparser
-from netaddr import *
+from netaddr import EUI, NotRegisteredError
 
 '''File I/O'''
 class FileIO:
@@ -29,7 +29,6 @@ class FileIO:
     '''Update config.ini (perform checks on values here?)'''
     def save_config(self, ip_prefix1, ip_prefix2, report_freq, disc_choice, thread_count):
         configState = {}
-        #try:
         if 0 < int(ip_prefix1) < 256 and 0 < int(ip_prefix2) < 256:
             configState['OCTET_ONE'] = 'IP_PREFIX', ip_prefix1
             configState['OCTET_TWO'] = 'IP_PREFIX', ip_prefix2
@@ -45,8 +44,6 @@ class FileIO:
         configState['COUNT'] = 'THREADS', thread_count
         FileIO.write_config(self, configState)
         self.config = FileIO.read_config(self)  # Read back changes
-        #except:
-        #    print('Error while saving')
 
     def write_config(self, configState):
         config = configparser.ConfigParser()
@@ -61,7 +58,6 @@ class FileIO:
             writer = csv.writer(output, delimiter='\t')
             writer.writerow(["IP", "MAC", "TYPE", "OUI"]) #Headers
             for record in recordList:
-                #print('Record: ', record.ip, record.mac, record.type, record.oui)
                 writer.writerow([record.ip, record.mac, record.type, record.oui])
 
 '''Attempt to retrieve information based on MAC address'''

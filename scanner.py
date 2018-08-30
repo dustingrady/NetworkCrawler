@@ -5,6 +5,7 @@
 from getmac import get_mac_address
 from utils import FileIO, GetInfo
 import tkinter as tk
+from tkinter.ttk import Progressbar
 import warnings
 import threading
 import queue
@@ -37,7 +38,6 @@ class GUI:
         button_frame.grid(row=0, column=1, padx='120', pady='75')
 
     '''Program description window'''
-
     def about_window(self):
         about_win = tk.Toplevel()
         about_win.wm_title("About")
@@ -50,7 +50,6 @@ class GUI:
         about_win.resizable(False, False)
 
     '''Provides r/w access to config.ini'''
-
     def config_window(self):
         config_win = tk.Toplevel()
         config_frame = tk.Frame(config_win)
@@ -109,7 +108,6 @@ class GUI:
         config_win.grab_set()  # Modal
 
     '''Display list of scan results'''
-
     def results_window(self):
         results_win = tk.Toplevel()
         results_win.title('Results')
@@ -118,7 +116,7 @@ class GUI:
         results_frame.pack(side='top')
 
         header_label = tk.Label(results_frame, text="IP\tMAC\tVENDOR",
-                                     font=('Helvetica', 11))  # Results header
+                                     font=('Helvetica', 12, 'bold'))  # Results header
         header_label.pack(side='top', anchor='w')
 
         results_scroll = tk.Scrollbar(results_frame, orient='vertical')
@@ -136,7 +134,7 @@ class GUI:
 
         self.viewArea.bind("<Configure>", lambda x: results_canvas.config(
             scrollregion=results_canvas.bbox("all")))  # Resize scroll region when widget size changes
-        results_win.grab_set()  # Modal
+        #results_win.grab_set()  # Modal
         results_win.resizable(False, False)
 
     '''Updates results_window'''
@@ -160,11 +158,49 @@ class GUI:
         details_frame = tk.Frame(details_win)
         details_frame.pack(side='top')
 
+        progress_label = tk.Label(details_frame, text="Gathering information..")
+        progress_label.grid(row=0, column=0)
+
+        self.progress_bar = Progressbar(details_frame, orient='horizontal', length=100, mode='determinate')
+        self.progress_bar.grid(row=1, column=0, sticky='ew')
+
+        self.ip_label = tk.Label(details_frame, text="IP Address: Loading..")
+        self.ip_label.grid(row=2, column=0, sticky='w')
+
+        self.mac_label = tk.Label(details_frame, text="MAC Address: Loading..")
+        self.mac_label.grid(row=3, column=0, sticky='w')
+
+        self.oui_label = tk.Label(details_frame, text="Vendor: Loading..")
+        self.oui_label.grid(row=4, column=0, sticky='w')
+
+        self.os_label = tk.Label(details_frame, text="Operating System: Loading..")
+        self.os_label.grid(row=5, column=0, sticky='w')
+
+        self.details_thread = threading.Thread(target=lambda: GUI.build_details(self, record))
+        self.details_thread.start()
+        #GUI.build_details(self, record)
+
+        #if progress_bar['value'] is 100:
+        #    print('DONE')
+        #Delete loading bar and label
+
         details_win.grab_set()  # Modal
         details_win.resizable(False, False)
-        details_win.geometry('100x100')
-        print(record.ip)
-        # Look up OS info, open ports, etc
+
+    def build_details(self, record):
+        self.ip_label.config(text="IP Address: " + str(record.ip))
+        print('IP', flush=True)
+
+        self.mac_label.config(text="MAC Address: " + str(record.mac))
+        print('MAC', flush=True)
+
+        self.oui_label.config(text="Vendor: " + str(record.oui))
+        print('OUI', flush=True)
+        self.progress_bar['value'] = 20
+
+        self.os_label.config(text="Operating System: " + GetInfo.retrieve_os(self, record.ip))
+        print('OS', flush=True)
+        self.progress_bar['value'] = 100
 
 class NetworkMonitor:
     warnings.filterwarnings("ignore")  # Ignore warning from get-mac lib
@@ -210,7 +246,7 @@ class NetworkMonitor:
                                       flush=True)
                                 self.record_list.append(record)
                                 GUI.build_result(self)
-                        FileIO.build_Report(self, self.record_list)
+                        FileIO.build_report(self, self.record_list)
                     else:
                         pass
 
@@ -233,7 +269,7 @@ class NetworkMonitor:
                               flush=True)
                         self.record_list.append(record)
                         GUI.build_result(self)
-                        FileIO.build_Report(self, self.record_list)
+                        FileIO.build_report(self, self.record_list)
                     else:
                         pass
             except:

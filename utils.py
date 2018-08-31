@@ -43,7 +43,7 @@ class FileIO:
         configState['TYPE'] = 'DISCOVERY', disc_choice
         configState['COUNT'] = 'THREADS', thread_count
         FileIO.write_config(self, configState)
-        self.config = FileIO.read_config(self)  # Read back changes
+        config = FileIO.read_config(self)  # Read back changes
 
     def write_config(self, configState):
         config = configparser.ConfigParser()

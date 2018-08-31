@@ -46,7 +46,6 @@ class GUI:
                                text="net_mon 2018\n A multithreaded pinging tool designed to monitor for\n new connections to a network and generate basic reports.")
         about_label.grid(row=0, column=0)
         about_win.geometry('325x70')
-        about_win.transient(self.master)  # Only one window in taskbar
         about_win.grab_set()  # Modal
         about_win.resizable(False, False)
 
@@ -106,7 +105,6 @@ class GUI:
 
         save_button.grid(row=6, column=0)
 
-        config_win.transient(self.master)  # Only one window in taskbar
         config_win.grab_set()  # Modal
 
     '''Display list of scan results'''
@@ -117,9 +115,10 @@ class GUI:
         results_frame = tk.Frame(results_win)
         results_frame.pack(side='top')
 
-        header_label = tk.Label(results_frame, text="IP\tMAC\tVENDOR",
-                                     font=('Helvetica', 12, 'bold'))  # Results header
-        header_label.pack(side='top', anchor='w')
+        #header_label = tk.Label(results_frame, text="IP\tMAC\tVENDOR",
+                                     #font=('Helvetica', 12, 'bold'))  # Results header
+
+        #header_label.pack(side='top', anchor='w')
 
         results_scroll = tk.Scrollbar(results_frame, orient='vertical')
         results_scroll.pack(side='right', fill='y')
@@ -137,22 +136,30 @@ class GUI:
         self.viewArea.bind("<Configure>", lambda x: results_canvas.config(
             scrollregion=results_canvas.bbox("all")))  # Resize scroll region when widget size changes
         #results_win.grab_set()  # Modal
-        results_win.transient(self.master)  # Only one window in taskbar
 
         results_win.resizable(False, False)
 
     '''Updates results_window'''
     def build_result(self):
+        ip_header_label = tk.Label(self.viewArea, text="IP", font=('Helvetica', 12, 'bold'))
+        ip_header_label.grid(row=0, column=0)
+
+        mac_header_label = tk.Label(self.viewArea, text="MAC", font=('Helvetica', 12, 'bold'))
+        mac_header_label.grid(row=0, column=1)
+
+        vendor_header_label = tk.Label(self.viewArea, text="Vendor", font=('Helvetica', 12, 'bold'))
+        vendor_header_label.grid(row=0, column=2)
+
         for i, rec in enumerate(self.record_list):
             ip_label = tk.Label(self.viewArea, text=str(rec.ip), background='gray80' if i % 2 is 0 else 'gray60')
             mac_label = tk.Label(self.viewArea, text=str(rec.mac), background='gray80' if i % 2 is 0 else 'gray60')
             oui_label = tk.Label(self.viewArea, text=str(rec.oui), background='gray80' if i % 2 is 0 else 'gray60')
             details_button = tk.Button(self.viewArea, text="Details", command=lambda i=i: GUI.details_window(self, self.record_list[i]))
 
-            ip_label.grid(row=i, column=0, sticky='ew')
-            mac_label.grid(row=i, column=1, sticky='ew')
-            oui_label.grid(row=i, column=2, sticky='ew')
-            details_button.grid(row=i, column=3, sticky='ew')
+            ip_label.grid(row=i+1, column=0, sticky='ew')
+            mac_label.grid(row=i+1, column=1, sticky='ew')
+            oui_label.grid(row=i+1, column=2, sticky='ew')
+            details_button.grid(row=i+1, column=3, sticky='ew')
 
     '''Show more details of a device'''
     def details_window(self, record):
@@ -177,33 +184,32 @@ class GUI:
         self.oui_label = tk.Label(details_frame, text="Vendor: Loading..")
         self.oui_label.grid(row=4, column=0, sticky='w')
 
+        self.port_label = tk.Label(details_frame, text="Port Status: Loading..")
+        self.port_label.grid(row=5, column=0, sticky='w')
+
         self.os_label = tk.Label(details_frame, text="Operating System: Loading..")
-        self.os_label.grid(row=5, column=0, sticky='w')
+        self.os_label.grid(row=6, column=0, sticky='w')
 
         self.details_thread = threading.Thread(target=lambda: GUI.build_details(self, record))
         self.details_thread.start()
 
-        #if progress_bar['value'] is 100:
-        #    print('DONE')
-        #Delete loading bar and label
-
         details_win.grab_set()  # Modal
-        details_win.transient(self.master)  # Only one window in taskbar
         details_win.resizable(False, False)
 
     def build_details(self, record):
         self.ip_label.config(text="IP Address: " + str(record.ip))
-        print('IP', flush=True)
+        self.progress_bar['value'] = 10
 
         self.mac_label.config(text="MAC Address: " + str(record.mac))
-        print('MAC', flush=True)
-
-        self.oui_label.config(text="Vendor: " + str(record.oui))
-        print('OUI', flush=True)
         self.progress_bar['value'] = 20
 
+        self.oui_label.config(text="Vendor: " + str(record.oui))
+        self.progress_bar['value'] = 30
+
+        self.port_label.config(text="Port Status: " + str(GetInfo.retrieve_port_status(self, record.ip)))
+        self.progress_bar['value'] = 70
+
         self.os_label.config(text="Operating System: " + GetInfo.retrieve_os(self, record.ip))
-        print('OS', flush=True)
         self.progress_bar['value'] = 100
 
 

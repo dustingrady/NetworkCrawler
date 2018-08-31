@@ -79,9 +79,19 @@ class GetInfo:
             if 'osmatch' in nm[addr]:
                 os = nm[addr]['osmatch'][0]['osclass'][0]['osfamily']
         except KeyError:
-            os = None
+            pass
+            #os = None
         return os
 
+    '''Scan a range of ports and report their status (open/closed)'''
+    def retrieve_port_status(self, addr):
+        nm = nmap.PortScanner()
+        ports = []
+        nm.scan(addr, '0-1023')
+        for port in nm[addr]['tcp'].keys():
+            print('Port', port, ' Status: ', nm[addr]['tcp'][port]['state'])
+            ports.append([port, nm[addr]['tcp'][port]['state']])
+        return ports
 
 '''Send reports out'''
 class GenerateEmail:

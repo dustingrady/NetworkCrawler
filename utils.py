@@ -79,8 +79,7 @@ class GetInfo:
             if 'osmatch' in nm[addr]:
                 os = nm[addr]['osmatch'][0]['osclass'][0]['osfamily']
         except KeyError:
-            pass
-            #os = None
+            os = None
         return os
 
     '''Scan a range of ports and report their status (open/closed)'''
@@ -88,9 +87,11 @@ class GetInfo:
         nm = nmap.PortScanner()
         ports = []
         nm.scan(addr, '0-1023')
-        for port in nm[addr]['tcp'].keys():
-            print('Port', port, ' Status: ', nm[addr]['tcp'][port]['state'])
-            ports.append([port, nm[addr]['tcp'][port]['state']])
+        try:
+            for port in nm[addr]['tcp'].keys():
+                ports.append([port, nm[addr]['tcp'][port]['state']])
+        except KeyError:
+            return None
         return ports
 
 '''Send reports out'''

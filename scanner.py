@@ -102,7 +102,6 @@ class GUI:
 
         '''Save Button'''
         save_button = tk.Button(config_win, text="Save", command=lambda: (FileIO.save_config(self, prefix1_val.get(), prefix2_val.get(), freq_choice.get(), disc_choice.get(), thread_slider.get()), config_win.destroy()))  # Could probably be cleaned up (pass dict?)
-
         save_button.grid(row=6, column=0)
 
         config_win.grab_set()  # Modal
@@ -114,11 +113,6 @@ class GUI:
 
         results_frame = tk.Frame(results_win)
         results_frame.pack(side='top')
-
-        #header_label = tk.Label(results_frame, text="IP\tMAC\tVENDOR",
-                                     #font=('Helvetica', 12, 'bold'))  # Results header
-
-        #header_label.pack(side='top', anchor='w')
 
         results_scroll = tk.Scrollbar(results_frame, orient='vertical')
         results_scroll.pack(side='right', fill='y')
@@ -166,52 +160,65 @@ class GUI:
         details_win = tk.Toplevel()
         details_win.title('Details')
 
-        details_frame = tk.Frame(details_win)
-        details_frame.pack(side='top')
+        self.details_frame = tk.Frame(details_win)
+        self.details_frame.pack(side='top')
 
-        progress_label = tk.Label(details_frame, text="Gathering information..")
-        progress_label.grid(row=0, column=0)
+        progress_label = tk.Label(self.details_frame, text="Gathering information..")
+        progress_label.grid(row=0, column=0, columnspan=2)
 
-        self.progress_bar = Progressbar(details_frame, orient='horizontal', length=100, mode='determinate')
-        self.progress_bar.grid(row=1, column=0, sticky='ew')
+        self.progress_bar = Progressbar(self.details_frame, orient='horizontal', length=100, mode='determinate')
+        self.progress_bar.grid(row=1, column=0, columnspan=2, sticky='ew')
 
-        self.ip_label = tk.Label(details_frame, text="IP Address: Loading..")
+        self.ip_label = tk.Label(self.details_frame, text="IP Address:")
+        self.ip_result_label = tk.Label(self.details_frame, text="Loading..")
         self.ip_label.grid(row=2, column=0, sticky='w')
+        self.ip_result_label.grid(row=2, column=1, sticky='w')
 
-        self.mac_label = tk.Label(details_frame, text="MAC Address: Loading..")
+        self.mac_label = tk.Label(self.details_frame, text="MAC Address:")
+        self.mac_result_label = tk.Label(self.details_frame, text="Loading..")
         self.mac_label.grid(row=3, column=0, sticky='w')
+        self.mac_result_label.grid(row=3, column=1, sticky='w')
 
-        self.oui_label = tk.Label(details_frame, text="Vendor: Loading..")
+        self.oui_label = tk.Label(self.details_frame, text="Vendor:")
+        self.oui_result_label = tk.Label(self.details_frame, text="Loading..")
         self.oui_label.grid(row=4, column=0, sticky='w')
+        self.oui_result_label.grid(row=4, column=1, sticky='w')
 
-        self.port_label = tk.Label(details_frame, text="Port Status: Loading..")
-        self.port_label.grid(row=5, column=0, sticky='w')
+        self.os_label = tk.Label(self.details_frame, text="Operating System:")
+        self.os_result_label = tk.Label(self.details_frame, text="Loading..")
+        self.os_label.grid(row=5, column=0, sticky='w')
+        self.os_result_label.grid(row=5, column=1, sticky='w')
 
-        self.os_label = tk.Label(details_frame, text="Operating System: Loading..")
-        self.os_label.grid(row=6, column=0, sticky='w')
+        self.port_label = tk.Label(self.details_frame, text="Port Status:")
+        self.port_placeholder_label = tk.Label(self.details_frame, text="Loading..")
+        self.port_label.grid(row=6, column=0, sticky='w')
+        self.port_placeholder_label.grid(row=6, column=1, sticky='w')
 
-        self.details_thread = threading.Thread(target=lambda: GUI.build_details(self, record))
+        self.details_thread = threading.Thread(target=lambda: GUI.build_details(self, record))  # Start thread to get results
         self.details_thread.start()
 
-        details_win.grab_set()  # Modal
+        #details_win.grab_set()  # Modal
         details_win.resizable(False, False)
 
     def build_details(self, record):
-        self.ip_label.config(text="IP Address: " + str(record.ip))
+        self.ip_result_label.config(text=str(record.ip))
         self.progress_bar['value'] = 10
 
-        self.mac_label.config(text="MAC Address: " + str(record.mac))
+        self.mac_result_label.config(text=record.mac)
         self.progress_bar['value'] = 20
 
-        self.oui_label.config(text="Vendor: " + str(record.oui))
+        self.oui_result_label.config(text=str(record.oui))
         self.progress_bar['value'] = 30
 
-        self.port_label.config(text="Port Status: " + str(GetInfo.retrieve_port_status(self, record.ip)))
+        self.os_result_label.config(text=GetInfo.retrieve_os(self, record.ip))
         self.progress_bar['value'] = 70
 
-        self.os_label.config(text="Operating System: " + GetInfo.retrieve_os(self, record.ip))
+        for i, port in enumerate(GetInfo.retrieve_port_status(self, record.ip)):
+            self.port_placeholder_label.config(text="")
+            self.port_result_label = tk.Label(self.details_frame)
+            self.port_result_label.config(text=port)
+            self.port_result_label.grid(row=i+6, column=1, sticky='w')
         self.progress_bar['value'] = 100
-
 
 class NetworkMonitor:
     warnings.filterwarnings("ignore")  # Ignore warning from get-mac lib
@@ -315,6 +322,7 @@ class Record:
         self.type = 'Unknown'
         self.oui = 'Unknown'
         self.op = 'Unknown'
+        self.ports = []
 
 root = tk.Tk()
 app = GUI(root)

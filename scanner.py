@@ -3,7 +3,7 @@
 #Status: In development
 
 from getmac import get_mac_address
-from utils import FileIO, GetInfo
+import utils, fileio
 import tkinter as tk
 from tkinter.ttk import Progressbar
 import warnings
@@ -17,7 +17,7 @@ class GUI:
         self.master = master
         self.master.title('Net Discovery Tool v0.1')
         self.build_gui()
-        self.configuration = FileIO.read_config(self)
+        self.configuration = fileio.read_config()
         self.net_mon = NetworkMonitor()
 
     def build_gui(self):
@@ -33,8 +33,7 @@ class GUI:
 
         '''Start/Stop buttons'''
         button_frame = tk.Frame(self.master)
-        start_button = tk.Button(button_frame, text="Start",
-                                 command=lambda: self.net_mon.start_scan()).pack(side='left')
+        self.start_button = tk.Button(button_frame, text="Start", command=lambda: self.net_mon.start_scan()).pack(side='left')
         stop_button = tk.Button(button_frame, text="Stop", command=lambda: self.net_mon.stop_scan()).pack(side='left')
         button_frame.grid(row=0, column=1, padx='120', pady='75')
 
@@ -51,7 +50,7 @@ class GUI:
 
     '''Provides r/w access to config.ini'''
     def config_window(self):
-        self.configuration = FileIO.read_config(self)
+        self.configuration = fileio.read_config()
 
         config_win = tk.Toplevel()
         config_frame = tk.Frame(config_win)
@@ -101,7 +100,7 @@ class GUI:
         thread_frame.grid(row=5, column=0, sticky='w')
 
         '''Save Button'''
-        save_button = tk.Button(config_win, text="Save", command=lambda: (FileIO.save_config(self, prefix1_val.get(), prefix2_val.get(), freq_choice.get(), disc_choice.get(), thread_slider.get()), config_win.destroy()))  # Could probably be cleaned up (pass dict?)
+        save_button = tk.Button(config_win, text="Save", command=lambda: (fileio.save_config(prefix1_val.get(), prefix2_val.get(), freq_choice.get(), disc_choice.get(), thread_slider.get()), config_win.destroy()))  # Could probably be cleaned up (pass dict?)
         save_button.grid(row=6, column=0)
 
         config_win.grab_set()  # Modal
@@ -163,8 +162,8 @@ class GUI:
         self.details_frame = tk.Frame(details_win)
         self.details_frame.pack(side='top')
 
-        progress_label = tk.Label(self.details_frame, text="Gathering information..")
-        progress_label.grid(row=0, column=0, columnspan=2)
+        self.progress_label = tk.Label(self.details_frame, text="Gathering information..")
+        self.progress_label.grid(row=0, column=0, columnspan=2)
 
         self.progress_bar = Progressbar(self.details_frame, orient='horizontal', length=100, mode='determinate')
         self.progress_bar.grid(row=1, column=0, columnspan=2, sticky='ew')
@@ -197,7 +196,7 @@ class GUI:
         self.details_thread = threading.Thread(target=lambda: GUI.build_details(self, record))  # Start thread to get results
         self.details_thread.start()
 
-        #details_win.grab_set()  # Modal
+        details_win.grab_set()  # Modal
         details_win.resizable(False, False)
 
     def build_details(self, record):
@@ -210,15 +209,20 @@ class GUI:
         self.oui_result_label.config(text=str(record.oui))
         self.progress_bar['value'] = 30
 
-        self.os_result_label.config(text=GetInfo.retrieve_os(self, record.ip))
+        self.os_result_label.config(text=utils.retrieve_os(record))
         self.progress_bar['value'] = 70
 
-        for i, port in enumerate(GetInfo.retrieve_port_status(self, record.ip)):
-            self.port_placeholder_label.config(text="")
-            self.port_result_label = tk.Label(self.details_frame)
-            self.port_result_label.config(text=port)
-            self.port_result_label.grid(row=i+6, column=1, sticky='w')
+        try:
+            for i, port in enumerate(utils.retrieve_port_status(record)):
+                self.port_placeholder_label.config(text="")
+                self.port_result_label = tk.Label(self.details_frame)
+                self.port_result_label.config(text=port)
+                self.port_result_label.grid(row=i+6, column=1, sticky='w')
+        except TypeError:
+            self.port_placeholder_label.config(text="None detected")
         self.progress_bar['value'] = 100
+        self.progress_label.config(text="Scan complete")
+
 
 class NetworkMonitor:
     warnings.filterwarnings("ignore")  # Ignore warning from get-mac lib
@@ -227,7 +231,7 @@ class NetworkMonitor:
         self.run_scan = True
         self.MAX_THREADS = 128
         self.addr_queue = queue.Queue()
-        self.configuration = FileIO.read_config(self)
+        self.configuration = fileio.read_config()
         self.record_list = []
         self.resultsList = tk.Listbox
 
@@ -248,12 +252,12 @@ class NetworkMonitor:
                         for i, val in enumerate(arp.split('\n')):
                             arp_output.append(val.split())
                             if len(arp_output[i]) == 3:
-                                oui = GetInfo.retrieve_oui(self, arp_output[i][1])
                                 record = Record()
                                 record.ip = arp_output[i][0]
                                 record.mac = arp_output[i][1]
                                 record.type = arp_output[i][2]
-                                record.oui = oui
+                                record.oui = utils.retrieve_oui(record)
+
                                 print('IP: ', record.ip,
                                       '\tMAC: ', record.mac,
                                       '\type: ', record.type,
@@ -262,7 +266,7 @@ class NetworkMonitor:
                                       flush=True)
                                 self.record_list.append(record)
                                 GUI.build_result(self)
-                        FileIO.build_report(self, self.record_list)
+                        fileio.build_report(self.record_list)
                     else:
                         pass
 
@@ -270,12 +274,11 @@ class NetworkMonitor:
                     response = os.system('ping -n 1 ' + addr + ' > nul')
                     mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
                     if response == 0 and mac:
-                        oui = GetInfo.retrieve_oui(self, mac)
                         record = Record()
                         record.ip = addr
                         record.mac = mac
                         record.type = None  # Unavailable for this method
-                        record.oui = oui
+                        record.oui = utils.retrieve_oui(record)
                         print('IP: ', record.ip,
                               '\tMAC: ', record.mac,
                               '\tVendor: ', record.oui,
@@ -283,7 +286,7 @@ class NetworkMonitor:
                               flush=True)
                         self.record_list.append(record)
                         GUI.build_result(self)
-                        FileIO.build_report(self, self.record_list)
+                        fileio.build_report(self.record_list)
                     else:
                         pass
             except:
@@ -293,7 +296,7 @@ class NetworkMonitor:
     '''Create multiple threads to accelerate pinging'''
     def start_scan(self):
         GUI.results_window(self)
-        self.configuration = FileIO.read_config(self)
+        self.configuration = fileio.read_config()
         self.addr_queue.queue.clear()
         [self.addr_queue.put(i) for i in [self.configuration['IP_PREFIX'][0] + '.' + self.configuration['IP_PREFIX'][1] + '.' + str(x) + '.' + str(y) for x in range(0, 256) for y in range(0, 256)]]
         scan_type = self.configuration['DISCOVERY']
@@ -313,6 +316,7 @@ class NetworkMonitor:
     '''Send email to user'''
     def alert_user(self):
         print("Emailing user..")
+
 
 '''Record object'''
 class Record:

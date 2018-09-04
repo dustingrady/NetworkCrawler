@@ -36,13 +36,13 @@ class GUI:
         photo = tk.PhotoImage(file="./source/logo.png")
         logo_label = tk.Label(self.master, image=photo)
         logo_label.image = photo
-        logo_label.grid(row=0, column=1)
+        logo_label.grid(row=0, column=1, padx=50, pady=20)
 
         '''Start/Stop buttons'''
         button_frame = tk.Frame(self.master)
         start_button = tk.Button(button_frame, text="Start", command=lambda: self.net_mon.start_scan()).pack(side='left')
         stop_button = tk.Button(button_frame, text="Stop", command=lambda: self.net_mon.stop_scan()).pack(side='left')
-        button_frame.grid(row=1, column=1, padx=50, pady=10)
+        button_frame.grid(row=1, column=1, padx=50, pady=20)
 
     '''Program description window'''
     def about_window(self):
@@ -62,7 +62,7 @@ class GUI:
         config_win = tk.Toplevel()
         config_frame = tk.Frame(config_win)
         config_win.wm_title("Configuration")
-        config_label = tk.Label(config_frame, text="======Configuration======").pack(side='top')
+        config_label = tk.Label(config_frame, text="Configuration", font=('Helvetica', 10, 'bold')).pack(side='top')
         config_frame.grid(row=0, column=0)
         config_win.resizable(False, False)
 
@@ -78,7 +78,7 @@ class GUI:
         dot = tk.Label(ip_frame, text=" . ").pack(side='left')
         ip_prefix_form2 = tk.Entry(ip_frame, textvariable=prefix2_val, width=5).pack(side='left')
         ip_suffix = tk.Label(ip_frame, text=" . X . X").pack(side='left')
-        ip_frame.grid(row=1, column=0, sticky='w')
+        ip_frame.grid(row=1, column=0, pady=5, sticky='w')
 
         '''Reports'''
         report_frame = tk.Frame(config_win)
@@ -87,7 +87,7 @@ class GUI:
         freq_choice = tk.StringVar(root)
         freq_choice.set(self.configuration['REPORT'])
         freq_menu = tk.OptionMenu(report_frame, freq_choice, *report_freq).pack(side='left')
-        report_frame.grid(row=2, column=0, sticky='w')
+        report_frame.grid(row=2, column=0, pady=5, sticky='w')
 
         '''Discovery Type'''
         discovery_frame = tk.Frame(config_win)
@@ -95,7 +95,7 @@ class GUI:
         disc_choice = tk.StringVar(root)
         disc_choice.set(self.configuration['DISCOVERY'])
         disc_menu = tk.OptionMenu(discovery_frame, disc_choice, *['ARP', 'Ping']).pack(side='left')
-        discovery_frame.grid(row=3, column=0, sticky='w')
+        discovery_frame.grid(row=3, column=0, pady=5, sticky='w')
 
         '''Thread Slider'''
         thread_frame = tk.Frame(config_win)
@@ -104,11 +104,11 @@ class GUI:
                                  orient='horizontal')
         thread_slider.set(self.configuration['THREADS'])
         thread_slider.pack(side='left')
-        thread_frame.grid(row=5, column=0, sticky='w')
+        thread_frame.grid(row=5, column=0, pady=5, sticky='w')
 
         '''Save Button'''
         save_button = tk.Button(config_win, text="Save", command=lambda: (fileio.save_config(prefix1_val.get(), prefix2_val.get(), freq_choice.get(), disc_choice.get(), thread_slider.get()), config_win.destroy()))  # Could probably be cleaned up (pass dict?)
-        save_button.grid(row=6, column=0)
+        save_button.grid(row=6, column=0, pady=5)
 
         config_win.grab_set()  # Modal
 

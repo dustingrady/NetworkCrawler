@@ -15,7 +15,7 @@ import os
 class GUI:
     def __init__(self, master):
         self.master = master
-        self.master.title('Net Discovery Tool v0.1')
+        self.master.title('v0.1')
         self.build_gui()
         self.configuration = fileio.read_config()
         self.net_mon = NetworkMonitor()
@@ -31,20 +31,27 @@ class GUI:
         menubar.add_cascade(label="File", menu=file_menu)
         root.config(menu=menubar)
 
+        '''Logo'''
+        logo_frame = tk.Frame(self.master)
+        photo = tk.PhotoImage(file="./source/logo.png")
+        logo_label = tk.Label(self.master, image=photo)
+        logo_label.image = photo
+        logo_label.grid(row=0, column=1)
+
         '''Start/Stop buttons'''
         button_frame = tk.Frame(self.master)
-        self.start_button = tk.Button(button_frame, text="Start", command=lambda: self.net_mon.start_scan()).pack(side='left')
+        start_button = tk.Button(button_frame, text="Start", command=lambda: self.net_mon.start_scan()).pack(side='left')
         stop_button = tk.Button(button_frame, text="Stop", command=lambda: self.net_mon.stop_scan()).pack(side='left')
-        button_frame.grid(row=0, column=1, padx='120', pady='75')
+        button_frame.grid(row=1, column=1, padx=50, pady=10)
 
     '''Program description window'''
     def about_window(self):
         about_win = tk.Toplevel()
         about_win.wm_title("About")
         about_label = tk.Label(about_win,
-                               text="net_mon 2018\n A multithreaded pinging tool designed to monitor for\n new connections to a network and generate basic reports.")
-        about_label.grid(row=0, column=0)
-        about_win.geometry('325x70')
+                               text="Network Discovery Tool 2018\n A multithreaded network discovery tool designed to discover\n devices within a network and provide reports on the information gathered")
+        about_label.grid(row=0, column=0, padx=15, pady=15)
+        #about_win.geometry('325x70')
         about_win.grab_set()  # Modal
         about_win.resizable(False, False)
 
@@ -80,7 +87,7 @@ class GUI:
         freq_choice = tk.StringVar(root)
         freq_choice.set(self.configuration['REPORT'])
         freq_menu = tk.OptionMenu(report_frame, freq_choice, *report_freq).pack(side='left')
-        report_frame.grid(row=2, column=0, padx='5', sticky='w')
+        report_frame.grid(row=2, column=0, sticky='w')
 
         '''Discovery Type'''
         discovery_frame = tk.Frame(config_win)
@@ -166,32 +173,32 @@ class GUI:
         self.progress_label.grid(row=0, column=0, columnspan=2)
 
         self.progress_bar = Progressbar(self.details_frame, orient='horizontal', length=100, mode='determinate')
-        self.progress_bar.grid(row=1, column=0, columnspan=2, sticky='ew')
+        self.progress_bar.grid(row=1, column=0, padx=30, columnspan=2, sticky='ew')
 
         self.ip_label = tk.Label(self.details_frame, text="IP Address:")
         self.ip_result_label = tk.Label(self.details_frame, text="Loading..")
-        self.ip_label.grid(row=2, column=0, sticky='w')
-        self.ip_result_label.grid(row=2, column=1, sticky='w')
+        self.ip_label.grid(row=2, column=0, padx=10, sticky='w')
+        self.ip_result_label.grid(row=2, padx=10, column=1, sticky='w')
 
         self.mac_label = tk.Label(self.details_frame, text="MAC Address:")
         self.mac_result_label = tk.Label(self.details_frame, text="Loading..")
-        self.mac_label.grid(row=3, column=0, sticky='w')
-        self.mac_result_label.grid(row=3, column=1, sticky='w')
+        self.mac_label.grid(row=3, column=0, padx=10, sticky='w')
+        self.mac_result_label.grid(row=3, padx=10, column=1, sticky='w')
 
         self.oui_label = tk.Label(self.details_frame, text="Vendor:")
         self.oui_result_label = tk.Label(self.details_frame, text="Loading..")
-        self.oui_label.grid(row=4, column=0, sticky='w')
-        self.oui_result_label.grid(row=4, column=1, sticky='w')
+        self.oui_label.grid(row=4, column=0, padx=10, sticky='w')
+        self.oui_result_label.grid(row=4, padx=10, column=1, sticky='w')
 
         self.os_label = tk.Label(self.details_frame, text="Operating System:")
         self.os_result_label = tk.Label(self.details_frame, text="Loading..")
-        self.os_label.grid(row=5, column=0, sticky='w')
-        self.os_result_label.grid(row=5, column=1, sticky='w')
+        self.os_label.grid(row=5, column=0, padx=10, sticky='w')
+        self.os_result_label.grid(row=5, padx=10, column=1, sticky='w')
 
         self.port_label = tk.Label(self.details_frame, text="Port Status:")
         self.port_placeholder_label = tk.Label(self.details_frame, text="Loading..")
-        self.port_label.grid(row=6, column=0, sticky='w')
-        self.port_placeholder_label.grid(row=6, column=1, sticky='w')
+        self.port_label.grid(row=6, column=0, padx=10, sticky='w')
+        self.port_placeholder_label.grid(row=6, padx=10, column=1, sticky='w')
 
         self.details_thread = threading.Thread(target=lambda: GUI.build_details(self, record))  # Start thread to get results
         self.details_thread.start()
@@ -330,6 +337,6 @@ class Record:
 
 root = tk.Tk()
 app = GUI(root)
-root.geometry('300x100')
+#root.geometry('175x175')
 root.resizable(False, False)
 root.mainloop()

@@ -33,7 +33,7 @@ class GUI:
 
         '''Logo'''
         logo_frame = tk.Frame(self.master)
-        photo = tk.PhotoImage(file="./source/logo.png")
+        photo = tk.PhotoImage(file="./assets/logo.png")
         logo_label = tk.Label(self.master, image=photo)
         logo_label.image = photo
         logo_label.grid(row=0, column=1, padx=50, pady=20)

@@ -190,7 +190,7 @@ class GUI:
         self.oui_label.grid(row=4, column=0, padx=10, sticky='w')
         self.oui_result_label.grid(row=4, padx=10, column=1, sticky='w')
 
-        self.os_label = tk.Label(self.details_frame, text="Operating System:")
+        self.os_label = tk.Label(self.details_frame, text="OS/ Accuracy:")
         self.os_result_label = tk.Label(self.details_frame, text="Loading..")
         self.os_label.grid(row=5, column=0, padx=10, sticky='w')
         self.os_result_label.grid(row=5, padx=10, column=1, sticky='w')
@@ -210,13 +210,14 @@ class GUI:
         self.ip_result_label.config(text=str(record.ip))
         self.progress_bar['value'] = 10
 
-        self.mac_result_label.config(text=record.mac)
+        self.mac_result_label.config(text=str(record.mac))
         self.progress_bar['value'] = 20
 
         self.oui_result_label.config(text=str(record.oui))
         self.progress_bar['value'] = 30
 
-        self.os_result_label.config(text=utils.retrieve_os(record))
+        x, y = utils.retrieve_os(record)
+        self.os_result_label.config(text=x + '/ ' + y + '%')
         self.progress_bar['value'] = 70
 
         try:

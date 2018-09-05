@@ -2,7 +2,6 @@
 #Purpose: Module to support common scan functions
 #Status: In development
 
-import sys
 import nmap
 from netaddr import EUI, NotRegisteredError
 
@@ -19,14 +18,15 @@ def retrieve_oui(record):
 '''Collect Operating System (uses best guess)'''
 def retrieve_os(record):
     nm = nmap.PortScanner()
-    #os = None
     try:
         nm.scan(record.ip, arguments='-O')
         if 'osmatch' in nm[record.ip]:
             os = nm[record.ip]['osmatch'][0]['name']
+            conf = nm[record.ip]['osmatch'][0]['accuracy']
     except:
         os = 'None detected'
-    return os
+        conf = '0'
+    return [os, conf]
 
 
 '''Collect visible ports'''

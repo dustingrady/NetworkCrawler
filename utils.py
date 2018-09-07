@@ -5,6 +5,13 @@
 import nmap
 from netaddr import EUI, NotRegisteredError
 
+'''Return index of a given IP address within record_list'''
+def get_record_index(ip, record_list):
+    for i, rec in enumerate(record_list):
+        if rec.ip == ip:
+            return i
+    return 'No record found'
+
 '''Collect OUI (vendor)'''
 def retrieve_oui(record):
     mac = EUI(record.mac)

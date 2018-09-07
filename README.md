@@ -5,16 +5,16 @@
 NetMon is a network discovery tool (currently under development) that attempts to reveal information about connected devices within a network.
 
 This tool may be suited for:
+  - Those wishing to perform a basic visibility test of their network
   - Systems Administrators
   - Curious folk
 
-#### Current Features
+#### Discovery Methods
   - Multi-threaded (brute force) pinging
   - ARP (Address Resolution Protocol)
-  - Output results to terminal
-
+ 
 #### Future Enhancements
-  - Generate periodic reports of network activity (connections/disconnections)
+  - Generate pen test reports of a given network
   - Provide more detailed information of discovered devices (OS/ port activity/ etc)
   - Give the ability for user to enter a specific IP address/range
   - Linux support

@@ -136,7 +136,6 @@ class GUI:
         self.viewArea.bind("<Configure>", lambda x: results_canvas.config(
             scrollregion=results_canvas.bbox("all")))  # Resize scroll region when widget size changes
         #results_win.grab_set()  # Modal
-
         results_win.resizable(False, False)
 
     '''Updates results_window'''
@@ -151,10 +150,11 @@ class GUI:
         vendor_header_label.grid(row=0, column=2)
 
         for i, rec in enumerate(self.record_list):
+            record = self.record_list[i]
             ip_label = tk.Label(self.viewArea, text=str(rec.ip), background='gray80' if i % 2 is 0 else 'gray60')
             mac_label = tk.Label(self.viewArea, text=str(rec.mac), background='gray80' if i % 2 is 0 else 'gray60')
             oui_label = tk.Label(self.viewArea, text=str(rec.oui), background='gray80' if i % 2 is 0 else 'gray60')
-            details_button = tk.Button(self.viewArea, text="Details", command=lambda i=i: GUI.details_window(self, self.record_list[i]))
+            details_button = tk.Button(self.viewArea, text="Details", command=lambda i=i: GUI.details_window(self, record))
 
             ip_label.grid(row=i+1, column=0, sticky='ew')
             mac_label.grid(row=i+1, column=1, sticky='ew')
@@ -216,12 +216,15 @@ class GUI:
         self.oui_result_label.config(text=str(record.oui))
         self.progress_bar['value'] = 30
 
-        x, y = utils.retrieve_os(record)
-        self.os_result_label.config(text=x + '/ ' + y + '%')
+        record.op_sys, record.op_acc = utils.retrieve_os(record)
+        self.record_list[(utils.get_record_index(record.ip, self.record_list))].op_sys = record.op_sys  # Update record object
+        self.record_list[(utils.get_record_index(record.ip, self.record_list))].op_acc = record.op_acc
+        self.os_result_label.config(text=record.op_sys + '/ ' + record.op_acc + '%')
         self.progress_bar['value'] = 70
 
         try:
             for i, port in enumerate(utils.retrieve_port_status(record)):
+                self.record_list[(utils.get_record_index(record.ip, self.record_list))].ports.append(port)
                 self.port_placeholder_label.config(text="")
                 self.port_result_label = tk.Label(self.details_frame)
                 self.port_result_label.config(text=port)
@@ -230,7 +233,6 @@ class GUI:
             self.port_placeholder_label.config(text="None detected")
         self.progress_bar['value'] = 100
         self.progress_label.config(text="Scan complete")
-
 
 class NetworkMonitor:
     warnings.filterwarnings("ignore")  # Ignore warning from get-mac lib
@@ -241,8 +243,7 @@ class NetworkMonitor:
         self.addr_queue = queue.Queue()
         self.configuration = fileio.read_config()
         self.record_list = []
-        self.resultsList = tk.Listbox
-
+        self.results_list = tk.Listbox
 
     '''Using 16-bit IPv4 scheme (after a successful ping, arp -a command can be run)'''
     def scan_network(self, scan_type):
@@ -270,7 +271,7 @@ class NetworkMonitor:
                                       '\tMAC: ', record.mac,
                                       '\type: ', record.type,
                                       '\tVendor: ', record.oui,
-                                      '\tOS: ', record.op,
+                                      '\tOS: ', record.op_sys,
                                       flush=True)
                                 self.record_list.append(record)
                                 GUI.build_result(self)
@@ -290,7 +291,7 @@ class NetworkMonitor:
                         print('IP: ', record.ip,
                               '\tMAC: ', record.mac,
                               '\tVendor: ', record.oui,
-                              '\tOS: ', record.op,
+                              '\tOS: ', record.op_sys,
                               flush=True)
                         self.record_list.append(record)
                         GUI.build_result(self)
@@ -321,6 +322,12 @@ class NetworkMonitor:
         self.run_scan = False
         #self.master.quit()
 
+        for i in range(0, len(self.record_list)):
+            print('IP: ', self.record_list[i].ip)
+            print('OUI: ', self.record_list[i].oui)
+            print('OS: ', self.record_list[i].op_sys)
+            print('PORTS: ', *self.record_list[i].ports)
+
     '''Send email to user'''
     def alert_user(self):
         print("Emailing user..")
@@ -333,7 +340,8 @@ class Record:
         self.mac = '00:00:00:00:00:00'
         self.type = 'Unknown'
         self.oui = 'Unknown'
-        self.op = 'Unknown'
+        self.op_sys = 'Unknown'
+        self.op_acc = '0'
         self.ports = []
 
 root = tk.Tk()

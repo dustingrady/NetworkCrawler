@@ -40,8 +40,10 @@ class GUI:
 
         '''Start/Stop buttons'''
         button_frame = tk.Frame(self.master)
-        start_button = tk.Button(button_frame, text="Start", command=lambda: self.net_mon.start_scan()).pack(side='left')
-        stop_button = tk.Button(button_frame, text="Stop", command=lambda: self.net_mon.stop_scan()).pack(side='left')
+        start_button = tk.Button(button_frame, text="Start", command=lambda: (start_button.config(state='disabled'), stop_button.config(state='normal'), self.net_mon.start_scan()))
+        start_button.pack(side='left')
+        stop_button = tk.Button(button_frame, text="Stop", command=lambda: (stop_button.config(state='disabled'), start_button.config(state='normal'), self.net_mon.stop_scan()))
+        stop_button.pack(side='left')
         button_frame.grid(row=1, column=1, padx=50, pady=20)
 
     '''Program description window'''
@@ -150,11 +152,10 @@ class GUI:
         vendor_header_label.grid(row=0, column=2)
 
         for i, rec in enumerate(self.record_list):
-            record = self.record_list[i]
             ip_label = tk.Label(self.viewArea, text=str(rec.ip), background='gray80' if i % 2 is 0 else 'gray60')
             mac_label = tk.Label(self.viewArea, text=str(rec.mac), background='gray80' if i % 2 is 0 else 'gray60')
             oui_label = tk.Label(self.viewArea, text=str(rec.oui), background='gray80' if i % 2 is 0 else 'gray60')
-            details_button = tk.Button(self.viewArea, text="Details", command=lambda i=i: GUI.details_window(self, record))
+            details_button = tk.Button(self.viewArea, text="Details", command=lambda i=i: GUI.details_window(self, self.record_list[i]))
 
             ip_label.grid(row=i+1, column=0, sticky='ew')
             mac_label.grid(row=i+1, column=1, sticky='ew')
@@ -303,10 +304,10 @@ class NetworkMonitor:
             self.addr_queue.put(addr)
 
     '''Create multiple threads to accelerate pinging'''
+    #Disable Start Scan button after start
     def start_scan(self):
         GUI.results_window(self)
         self.configuration = fileio.read_config()
-        self.addr_queue.queue.clear()
         [self.addr_queue.put(i) for i in [self.configuration['IP_PREFIX'][0] + '.' + self.configuration['IP_PREFIX'][1] + '.' + str(x) + '.' + str(y) for x in range(0, 256) for y in range(0, 256)]]
         scan_type = self.configuration['DISCOVERY']
         print('Discovering devices via brute force ping' if scan_type == 'Ping' else 'Displaying Address Resolution Protocol (ARP) Table', flush=True)
@@ -320,8 +321,13 @@ class NetworkMonitor:
     def stop_scan(self):
         print('Stopping scan..', flush=True)
         self.run_scan = False
+        self.addr_queue.queue.clear()
+        del self.record_list[:]
+
+
         #self.master.quit()
 
+        #Testing
         for i in range(0, len(self.record_list)):
             print('IP: ', self.record_list[i].ip)
             print('OUI: ', self.record_list[i].oui)

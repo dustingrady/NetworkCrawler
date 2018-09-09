@@ -5,7 +5,7 @@
 from getmac import get_mac_address
 import utils, fileio
 import tkinter as tk
-from tkinter.ttk import Progressbar
+from tkinter.ttk import Progressbar, Separator
 import warnings
 import threading
 import queue
@@ -60,7 +60,6 @@ class GUI:
     '''Provides r/w access to config.ini'''
     def config_window(self):
         self.configuration = fileio.read_config()
-
         config_win = tk.Toplevel()
         config_frame = tk.Frame(config_win)
         config_win.wm_title("Configuration")
@@ -119,48 +118,74 @@ class GUI:
         results_win = tk.Toplevel()
         results_win.title('Results')
 
+        '''Results'''
         results_frame = tk.Frame(results_win)
         results_frame.pack(side='top')
 
         results_scroll = tk.Scrollbar(results_frame, orient='vertical')
         results_scroll.pack(side='right', fill='y')
 
-        results_canvas = tk.Canvas(results_frame, bd=0, width=500)
+        results_canvas = tk.Canvas(results_frame, bd=0, width=450)
         results_canvas.pack(fill='both', side='left')
 
-        self.viewArea = tk.Frame(results_canvas)
-        self.viewArea.pack(side='top', fill='both')
+        self.results_view_area = tk.Frame(results_canvas)
+        self.results_view_area.pack(side='top', fill='both')
 
         results_canvas.config(yscrollcommand=results_scroll.set)
         results_scroll.config(command=results_canvas.yview)
-        results_canvas.create_window((0, 0), window=self.viewArea, anchor='nw')
+        results_canvas.create_window((0, 0), window=self.results_view_area, anchor='nw')
 
-        self.viewArea.bind("<Configure>", lambda x: results_canvas.config(
+        self.results_view_area.bind("<Configure>", lambda x: results_canvas.config(
             scrollregion=results_canvas.bbox("all")))  # Resize scroll region when widget size changes
-        #results_win.grab_set()  # Modal
+
+        '''Progress'''
+        progress_frame = tk.Frame(results_win)
+        progress_frame.pack(side='bottom')
+
+        sep = Separator(progress_frame, orient="horizontal")
+        sep.pack(fill='both')
+
+        progress_canvas = tk.Canvas(progress_frame, bd=0, width=450, height=15)
+        progress_canvas.pack(fill='both', side='left')
+
+        self.progress_view_area = tk.Frame(progress_canvas)
+        self.progress_view_area.pack(side='top', fill='both')
+
+        progress_canvas.config(yscrollcommand=results_scroll.set)
+        progress_canvas.create_window((0, 0), window=self.progress_view_area, anchor='nw')
+
         results_win.resizable(False, False)
+        #results_win.grab_set()  # Modal
+
 
     '''Updates results_window'''
     def build_result(self):
-        ip_header_label = tk.Label(self.viewArea, text="IP", font=('Helvetica', 12, 'bold'))
+        ip_header_label = tk.Label(self.results_view_area, text="IP", font=('Helvetica', 12, 'bold'))
         ip_header_label.grid(row=0, column=0)
 
-        mac_header_label = tk.Label(self.viewArea, text="MAC", font=('Helvetica', 12, 'bold'))
+        mac_header_label = tk.Label(self.results_view_area, text="MAC", font=('Helvetica', 12, 'bold'))
         mac_header_label.grid(row=0, column=1)
 
-        vendor_header_label = tk.Label(self.viewArea, text="Vendor", font=('Helvetica', 12, 'bold'))
+        vendor_header_label = tk.Label(self.results_view_area, text="Vendor", font=('Helvetica', 12, 'bold'))
         vendor_header_label.grid(row=0, column=2)
 
         for i, rec in enumerate(self.record_list):
-            ip_label = tk.Label(self.viewArea, text=str(rec.ip), background='gray80' if i % 2 is 0 else 'gray60')
-            mac_label = tk.Label(self.viewArea, text=str(rec.mac), background='gray80' if i % 2 is 0 else 'gray60')
-            oui_label = tk.Label(self.viewArea, text=str(rec.oui), background='gray80' if i % 2 is 0 else 'gray60')
-            details_button = tk.Button(self.viewArea, text="Details", command=lambda i=i: GUI.details_window(self, self.record_list[i]))
+            ip_label = tk.Label(self.results_view_area, text=str(rec.ip), background='gray80' if i % 2 is 0 else 'gray60')
+            mac_label = tk.Label(self.results_view_area, text=str(rec.mac), background='gray80' if i % 2 is 0 else 'gray60')
+            oui_label = tk.Label(self.results_view_area, text=str(rec.oui), background='gray80' if i % 2 is 0 else 'gray60')
+            details_button = tk.Button(self.results_view_area, text="Details", command=lambda i=i: GUI.details_window(self, self.record_list[i]))
 
             ip_label.grid(row=i+1, column=0, sticky='ew')
             mac_label.grid(row=i+1, column=1, sticky='ew')
             oui_label.grid(row=i+1, column=2, sticky='ew')
             details_button.grid(row=i+1, column=3, sticky='ew')
+
+
+    '''Update scanned list'''
+    def build_status(self, status):
+        progress_label = tk.Label(self.progress_view_area, text=status)
+        progress_label.grid(row=0, column=0, sticky='ew')
+
 
     '''Show more details of a device'''
     def details_window(self, record):
@@ -201,7 +226,7 @@ class GUI:
         self.port_label.grid(row=6, column=0, padx=10, sticky='w')
         self.port_placeholder_label.grid(row=6, padx=10, column=1, sticky='w')
 
-        self.details_thread = threading.Thread(target=lambda: GUI.build_details(self, record))  # Start thread to get results
+        self.details_thread = threading.Thread(target=lambda: (GUI.build_details(self, record)))  # Start thread to get results
         self.details_thread.start()
 
         details_win.grab_set()  # Modal
@@ -241,15 +266,18 @@ class NetworkMonitor:
     def __init__(self):
         self.run_scan = True
         self.MAX_THREADS = 128
-        self.addr_queue = queue.Queue()
         self.configuration = fileio.read_config()
+        self.addr_queue = queue.Queue()
+        [self.addr_queue.put(i) for i in [self.configuration['IP_PREFIX'][0] + '.' + self.configuration['IP_PREFIX'][1] + '.' + str(x) + '.' + str(y) for x in range(0, 256) for y in range(0, 256)]] #Populate queue
         self.record_list = []
         self.results_list = tk.Listbox
+
 
     '''Using 16-bit IPv4 scheme (after a successful ping, arp -a command can be run)'''
     def scan_network(self, scan_type):
         while not self.addr_queue.empty() and self.run_scan:
             addr = self.addr_queue.get()
+            GUI.build_status(self, 'Scanning ' + addr)
             try:
                 if scan_type == 'ARP':
                     arp_output = []  # Move this somewhere outside of loop(?)
@@ -257,6 +285,7 @@ class NetworkMonitor:
                     mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
                     if response == 0 and mac:
                         print('Ping successful, running ARP command..', flush=True)
+                        GUI.build_status(self, 'Ping successful, running ARP command..')
                         self.run_scan = False  # Stop scan after successful ping
                         arp = os.popen('arp -a').read()
                         for i, val in enumerate(arp.split('\n')):
@@ -301,14 +330,14 @@ class NetworkMonitor:
                         pass
             except:
                 print('Error during scan')
-            self.addr_queue.put(addr)
+
 
     '''Create multiple threads to accelerate pinging'''
     #Disable Start Scan button after start
     def start_scan(self):
         GUI.results_window(self)
         self.configuration = fileio.read_config()
-        [self.addr_queue.put(i) for i in [self.configuration['IP_PREFIX'][0] + '.' + self.configuration['IP_PREFIX'][1] + '.' + str(x) + '.' + str(y) for x in range(0, 256) for y in range(0, 256)]]
+        #[self.addr_queue.put(i) for i in [self.configuration['IP_PREFIX'][0] + '.' + self.configuration['IP_PREFIX'][1] + '.' + str(x) + '.' + str(y) for x in range(0, 256) for y in range(0, 256)]]
         scan_type = self.configuration['DISCOVERY']
         print('Discovering devices via brute force ping' if scan_type == 'Ping' else 'Displaying Address Resolution Protocol (ARP) Table', flush=True)
         self.run_scan = True
@@ -323,16 +352,8 @@ class NetworkMonitor:
         self.run_scan = False
         self.addr_queue.queue.clear()
         del self.record_list[:]
-
-
         #self.master.quit()
 
-        #Testing
-        for i in range(0, len(self.record_list)):
-            print('IP: ', self.record_list[i].ip)
-            print('OUI: ', self.record_list[i].oui)
-            print('OS: ', self.record_list[i].op_sys)
-            print('PORTS: ', *self.record_list[i].ports)
 
     '''Send email to user'''
     def alert_user(self):

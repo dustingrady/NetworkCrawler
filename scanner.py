@@ -18,7 +18,7 @@ class GUI:
         self.master.title('v0.1')
         self.build_gui()
         self.configuration = fileio.read_config()
-        self.net_mon = NetworkMonitor()
+        self.net_mon = NetworkCrawler()
 
     def build_gui(self):
         ''''File menu'''''
@@ -62,8 +62,6 @@ class GUI:
         self.configuration = fileio.read_config()
         config_win = tk.Toplevel()
         config_frame = tk.Frame(config_win)
-        config_win.wm_title("Configuration")
-        config_label = tk.Label(config_frame, text="Configuration", font=('Helvetica', 10, 'bold')).pack(side='top')
         config_frame.grid(row=0, column=0)
         config_win.resizable(False, False)
 
@@ -260,7 +258,7 @@ class GUI:
         self.progress_bar['value'] = 100
         self.progress_label.config(text="Scan complete")
 
-class NetworkMonitor:
+class NetworkCrawler:
     warnings.filterwarnings("ignore")  # Ignore warning from get-mac lib
 
     def __init__(self):
@@ -268,7 +266,6 @@ class NetworkMonitor:
         self.MAX_THREADS = 128
         self.configuration = fileio.read_config()
         self.addr_queue = queue.Queue()
-        [self.addr_queue.put(i) for i in [self.configuration['IP_PREFIX'][0] + '.' + self.configuration['IP_PREFIX'][1] + '.' + str(x) + '.' + str(y) for x in range(0, 256) for y in range(0, 256)]] #Populate queue
         self.record_list = []
         self.results_list = tk.Listbox
 
@@ -337,13 +334,13 @@ class NetworkMonitor:
     def start_scan(self):
         GUI.results_window(self)
         self.configuration = fileio.read_config()
-        #[self.addr_queue.put(i) for i in [self.configuration['IP_PREFIX'][0] + '.' + self.configuration['IP_PREFIX'][1] + '.' + str(x) + '.' + str(y) for x in range(0, 256) for y in range(0, 256)]]
+        [self.addr_queue.put(i) for i in [self.configuration['IP_PREFIX'][0] + '.' + self.configuration['IP_PREFIX'][1] + '.' + str(x) + '.' + str(y) for x in range(0, 256) for y in range(0, 256)]]
         scan_type = self.configuration['DISCOVERY']
         print('Discovering devices via brute force ping' if scan_type == 'Ping' else 'Displaying Address Resolution Protocol (ARP) Table', flush=True)
         self.run_scan = True
         self.threads = {}
         for i in range(0, self.configuration['THREADS']):
-            self.threads['thread' + str(i)] = threading.Thread(target=lambda: NetworkMonitor.scan_network(self, scan_type))  # Create thread
+            self.threads['thread' + str(i)] = threading.Thread(target=lambda: NetworkCrawler.scan_network(self, scan_type))  # Create thread
             self.threads['thread' + str(i)].start()  # Start thread
 
     '''Cancel current scan'''

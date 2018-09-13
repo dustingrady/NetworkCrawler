@@ -1,11 +1,11 @@
-# NetMon
+# NetCrawler
 
-![NetMon](https://i.imgur.com/TEXQeK3.png)
+![NetCrawl](https://i.imgur.com/6WyWqAP.png)
 
-NetMon is a network discovery tool (currently under development) that attempts to reveal information about connected devices within a network.
+NetCrawler is a network discovery tool (currently under development) that attempts to reveal information about connected devices within a network.
 
 This tool may be suited for:
-  - Those wishing to perform a basic visibility test of their network
+  - Those wishing to perform a basic visibility/pen test of their network
   - Systems Administrators
   - Curious folk
 

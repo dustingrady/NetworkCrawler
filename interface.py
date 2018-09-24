@@ -1,36 +1,40 @@
 from tkinter.ttk import Progressbar, Separator
-import utils, fileio, scanner
 import tkinter as tk
 import threading
+import scanner
+import fileio
+import utils
 
-class GUI:
-    def __init__(self, master):
-        self.master = master
-        self.master.title('v0.1')
-        self.build_gui()
+
+class GUI(tk.Tk):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)  # make sure you call this when overriding parent methods
+        self.title('v0.1')
         self.configuration = fileio.read_config()
-        self.net_mon = scanner.NetworkMonitor()
+        self.net_mon = scanner.NetworkMonitor(self)
+        self.MAX_THREADS = 128
+        GUI.build_gui(self)
 
     def build_gui(self):
         ''''File menu'''''
-        menubar = tk.Menu(root)
+        menubar = tk.Menu(self)
         file_menu = tk.Menu(menubar, tearoff=0)
         file_menu.add_command(label="Configure", command=self.config_window)
         file_menu.add_command(label="About", command=self.about_window)
         file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=root.quit)
+        file_menu.add_command(label="Exit", command=GUI.quit)
         menubar.add_cascade(label="File", menu=file_menu)
-        root.config(menu=menubar)
+        self.config(menu=menubar)
 
         '''Logo'''
-        logo_frame = tk.Frame(self.master)
+        logo_frame = tk.Frame(self)
         photo = tk.PhotoImage(file="./assets/logo.png")
-        logo_label = tk.Label(self.master, image=photo)
+        logo_label = tk.Label(self, image=photo)
         logo_label.image = photo
         logo_label.grid(row=0, column=1, padx=50, pady=20)
 
         '''Start/Stop buttons'''
-        button_frame = tk.Frame(self.master)
+        button_frame = tk.Frame(self)
         start_button = tk.Button(button_frame, text="Start", command=lambda: (start_button.config(state='disabled'), stop_button.config(state='normal'), self.net_mon.start_scan()))
         start_button.pack(side='left')
         stop_button = tk.Button(button_frame, text="Stop", command=lambda: (stop_button.config(state='disabled'), start_button.config(state='normal'), self.net_mon.stop_scan()))
@@ -76,7 +80,7 @@ class GUI:
         report_frame = tk.Frame(config_win)
         report_label = tk.Label(report_frame, text="Report frequency ").pack(side='left')
         report_freq = ['Live', '1 hour', '6 hours', '12 hours', '24 hours', 'Never']
-        freq_choice = tk.StringVar(root)
+        freq_choice = tk.StringVar(self)
         freq_choice.set(self.configuration['REPORT'])
         freq_menu = tk.OptionMenu(report_frame, freq_choice, *report_freq).pack(side='left')
         report_frame.grid(row=2, column=0, pady=5, sticky='w')
@@ -84,7 +88,7 @@ class GUI:
         '''Discovery Type'''
         discovery_frame = tk.Frame(config_win)
         report_label = tk.Label(discovery_frame, text="Discovery method ").pack(side='left')
-        disc_choice = tk.StringVar(root)
+        disc_choice = tk.StringVar(self)
         disc_choice.set(self.configuration['DISCOVERY'])
         disc_menu = tk.OptionMenu(discovery_frame, disc_choice, *['ARP', 'Ping']).pack(side='left')
         discovery_frame.grid(row=3, column=0, pady=5, sticky='w')
@@ -92,7 +96,7 @@ class GUI:
         '''Thread Slider'''
         thread_frame = tk.Frame(config_win)
         thread_label = tk.Label(thread_frame, text="Threads").pack(side='left')
-        thread_slider = tk.Scale(thread_frame, from_=8, to=self.net_mon.MAX_THREADS, resolution=8, length=150,
+        thread_slider = tk.Scale(thread_frame, from_=8, to=self.MAX_THREADS, resolution=8, length=150,
                                  orient='horizontal')
         thread_slider.set(self.configuration['THREADS'])
         thread_slider.pack(side='left')
@@ -160,11 +164,11 @@ class GUI:
         vendor_header_label = tk.Label(self.results_view_area, text="Vendor", font=('Helvetica', 12, 'bold'))
         vendor_header_label.grid(row=0, column=2)
 
-        for i, rec in enumerate(self.record_list):
+        for i, rec in enumerate(self.net_mon.record_list):
             ip_label = tk.Label(self.results_view_area, text=str(rec.ip), background='gray80' if i % 2 is 0 else 'gray60')
             mac_label = tk.Label(self.results_view_area, text=str(rec.mac), background='gray80' if i % 2 is 0 else 'gray60')
             oui_label = tk.Label(self.results_view_area, text=str(rec.oui), background='gray80' if i % 2 is 0 else 'gray60')
-            details_button = tk.Button(self.results_view_area, text="Details", command=lambda i=i: GUI.details_window(self, self.record_list[i]))
+            details_button = tk.Button(self.results_view_area, text="Details", command=lambda i=i: GUI.details_window(self, self.net_mon.record_list[i]))
 
             ip_label.grid(row=i+1, column=0, sticky='ew')
             mac_label.grid(row=i+1, column=1, sticky='ew')
@@ -234,14 +238,14 @@ class GUI:
         self.progress_bar['value'] = 30
 
         record.op_sys, record.op_acc = utils.retrieve_os(record)
-        self.record_list[(utils.get_record_index(record.ip, self.record_list))].op_sys = record.op_sys  # Update record object
-        self.record_list[(utils.get_record_index(record.ip, self.record_list))].op_acc = record.op_acc
+        self.net_mon.record_list[(utils.get_record_index(record.ip, self.net_mon.record_list))].op_sys = record.op_sys  # Update record object
+        self.net_mon.record_list[(utils.get_record_index(record.ip, self.net_mon.record_list))].op_acc = record.op_acc
         self.os_result_label.config(text=record.op_sys + '/ ' + record.op_acc + '%')
         self.progress_bar['value'] = 70
 
         try:
             for i, port in enumerate(utils.retrieve_port_status(record)):
-                self.record_list[(utils.get_record_index(record.ip, self.record_list))].ports.append(port)
+                self.net_mon.record_list[(utils.get_record_index(record.ip, self.net_mon.record_list))].ports.append(port)
                 self.port_placeholder_label.config(text="")
                 self.port_result_label = tk.Label(self.details_frame)
                 self.port_result_label.config(text=port)
@@ -256,9 +260,8 @@ class GUI:
         tk.messagebox.showinfo("Error", msg)
     '''
 
-root = tk.Tk()
-app = GUI(root)
-#root.geometry('175x175')
-root.resizable(False, False)
-root.mainloop()
 
+if __name__ == '__main__':
+    app = GUI()
+    app.resizable(False, False)
+    app.mainloop()

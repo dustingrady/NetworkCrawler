@@ -56,8 +56,6 @@ class NetworkMonitor:
                                 self.record_list.append(record)
                                 self.gui.build_result()
                         fileio.build_report(self.record_list)
-                    else:
-                        pass
 
                 if scan_type == 'Ping':
                     response = os.system('ping -n 1 ' + addr + ' > nul')
@@ -76,31 +74,27 @@ class NetworkMonitor:
                         self.record_list.append(record)
                         self.gui.build_result()
                         fileio.build_report(self.record_list)
-                    else:
-                        pass
             except:
                 print('Error during scan')
 
     '''Create multiple threads to accelerate pinging'''
     def start_scan(self):
-        self.gui.results_window()
-        self.configuration = fileio.read_config()
+        self.record_list[:] = []
+        self.gui.clear_result_window()
         [self.addr_queue.put(i) for i in [self.configuration['IP_PREFIX'][0] + '.' + self.configuration['IP_PREFIX'][1] + '.' + str(x) + '.' + str(y) for x in range(0, 256) for y in range(0, 256)]]
         scan_type = self.configuration['DISCOVERY']
         print('Discovering devices via brute force ping' if scan_type == 'Ping' else 'Displaying Address Resolution Protocol (ARP) Table', flush=True)
         self.run_scan = True
-        self.threads = {}
+        threads = {}
         for i in range(0, self.configuration['THREADS']):
-            self.threads['thread' + str(i)] = threading.Thread(target=lambda: NetworkMonitor.scan_network(self, scan_type))  # Create thread
-            self.threads['thread' + str(i)].start()  # Start thread
+            threads['thread' + str(i)] = threading.Thread(target=lambda: NetworkMonitor.scan_network(self, scan_type))  # Create thread
+            threads['thread' + str(i)].start()  # Start thread
 
     '''Cancel current scan'''
     def stop_scan(self):
         print('Stopping scan..', flush=True)
         self.run_scan = False
         self.addr_queue.queue.clear()
-        del self.record_list[:]
-
 
 class Record:
     def __init__(self):

@@ -1,3 +1,11 @@
+#Author: Dustin Grady
+#Purpose: Draw GUI
+#Status: In development
+#To do:
+#   -Align results to one side
+#   -Clean up self declarations outside of init
+#   -Clear list when user clicks start
+
 from tkinter.ttk import Progressbar, Separator
 import tkinter as tk
 import threading
@@ -8,7 +16,7 @@ import utils
 
 class GUI(tk.Tk):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)  # make sure you call this when overriding parent methods
+        super().__init__(*args, **kwargs)  # Make sure to call this when overriding parent methods
         self.title('v0.1')
         self.configuration = fileio.read_config()
         self.net_mon = scanner.NetworkMonitor(self)
@@ -27,7 +35,6 @@ class GUI(tk.Tk):
         self.config(menu=menubar)
 
         '''Logo'''
-        logo_frame = tk.Frame(self)
         photo = tk.PhotoImage(file="./assets/logo.png")
         logo_label = tk.Label(self, image=photo)
         logo_label.image = photo
@@ -40,6 +47,42 @@ class GUI(tk.Tk):
         stop_button = tk.Button(button_frame, text="Stop", command=lambda: (stop_button.config(state='disabled'), start_button.config(state='normal'), self.net_mon.stop_scan()))
         stop_button.pack(side='left')
         button_frame.grid(row=1, column=1, padx=50, pady=20)
+
+        '''Results'''
+        results_frame = tk.Frame(self)
+
+        results_scroll = tk.Scrollbar(results_frame, orient='vertical')
+        results_scroll.pack(side='right', fill='y')
+
+        results_canvas = tk.Canvas(results_frame, bd=0, width=400)
+        results_canvas.pack(fill='both', side='left')
+
+        self.results_view_area = tk.Frame(results_canvas)
+        self.results_view_area.pack(side='top', fill='both')
+
+        results_canvas.config(yscrollcommand=results_scroll.set)
+        results_scroll.config(command=results_canvas.yview)
+        results_canvas.create_window((0, 0), window=self.results_view_area, anchor='nw')
+
+        self.results_view_area.bind("<Configure>", lambda x: results_canvas.config(scrollregion=results_canvas.bbox("all")))  # Resize scroll region when widget size changes
+        results_frame.grid(row=0, column=2)
+
+        '''Progress'''
+        progress_frame = tk.Frame(self)
+        #progress_frame.pack(side='bottom')
+
+        sep = Separator(progress_frame, orient="horizontal")
+        sep.pack(fill='both')
+
+        progress_canvas = tk.Canvas(progress_frame, bd=0, width=400, height=15)
+        progress_canvas.pack(fill='both', side='left')
+
+        self.progress_view_area = tk.Frame(progress_canvas)
+        self.progress_view_area.pack(side='top', fill='both')
+
+        progress_canvas.config(yscrollcommand=results_scroll.set)
+        progress_canvas.create_window((0, 0), window=self.progress_view_area, anchor='nw')
+        progress_frame.grid(row=1, column=2)
 
     '''Program description window'''
     def about_window(self):
@@ -108,51 +151,6 @@ class GUI(tk.Tk):
 
         config_win.grab_set()  # Modal
 
-    '''Display list of scan results'''
-    def results_window(self):
-        results_win = tk.Toplevel()
-        results_win.title('Results')
-
-        '''Results'''
-        results_frame = tk.Frame(results_win)
-        results_frame.pack(side='top')
-
-        results_scroll = tk.Scrollbar(results_frame, orient='vertical')
-        results_scroll.pack(side='right', fill='y')
-
-        results_canvas = tk.Canvas(results_frame, bd=0, width=450)
-        results_canvas.pack(fill='both', side='left')
-
-        self.results_view_area = tk.Frame(results_canvas)
-        self.results_view_area.pack(side='top', fill='both')
-
-        results_canvas.config(yscrollcommand=results_scroll.set)
-        results_scroll.config(command=results_canvas.yview)
-        results_canvas.create_window((0, 0), window=self.results_view_area, anchor='nw')
-
-        self.results_view_area.bind("<Configure>", lambda x: results_canvas.config(
-            scrollregion=results_canvas.bbox("all")))  # Resize scroll region when widget size changes
-
-        '''Progress'''
-        progress_frame = tk.Frame(results_win)
-        progress_frame.pack(side='bottom')
-
-        sep = Separator(progress_frame, orient="horizontal")
-        sep.pack(fill='both')
-
-        progress_canvas = tk.Canvas(progress_frame, bd=0, width=450, height=15)
-        progress_canvas.pack(fill='both', side='left')
-
-        self.progress_view_area = tk.Frame(progress_canvas)
-        self.progress_view_area.pack(side='top', fill='both')
-
-        progress_canvas.config(yscrollcommand=results_scroll.set)
-        progress_canvas.create_window((0, 0), window=self.progress_view_area, anchor='nw')
-
-        results_win.resizable(False, False)
-        #results_win.grab_set()  # Modal
-
-
     '''Updates results_window'''
     def build_result(self):
         ip_header_label = tk.Label(self.results_view_area, text="IP", font=('Helvetica', 12, 'bold'))
@@ -175,6 +173,11 @@ class GUI(tk.Tk):
             oui_label.grid(row=i+1, column=2, sticky='ew')
             details_button.grid(row=i+1, column=3, sticky='ew')
 
+
+    '''Clear our results'''
+    def clear_result_window(self):
+        for widget in self.results_view_area.winfo_children():
+            widget.destroy()
 
     '''Update scanned list'''
     def build_status(self, status):

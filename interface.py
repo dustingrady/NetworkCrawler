@@ -5,6 +5,7 @@
 #   -Align results to one side
 #   -Clean up self declarations outside of init
 #   -Clear list when user clicks start
+#   -Prevent loading bar and status from moving during scan
 
 from tkinter.ttk import Progressbar, Separator
 import tkinter as tk
@@ -18,13 +19,14 @@ class GUI(tk.Tk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)  # Make sure to call this when overriding parent methods
         self.title('v0.1')
+        GUI.build_gui(self)
         self.configuration = fileio.read_config()
         self.net_mon = scanner.NetworkMonitor(self)
-        self.MAX_THREADS = 128
-        GUI.build_gui(self)
+        self.MAX_THREADS = 256
+        GUI.update_status(self, 'Press start to begin search')
 
     def build_gui(self):
-        ''''File menu'''''
+        '''File menu'''
         menubar = tk.Menu(self)
         file_menu = tk.Menu(menubar, tearoff=0)
         file_menu.add_command(label="Configure", command=self.config_window)
@@ -37,52 +39,65 @@ class GUI(tk.Tk):
         '''Logo'''
         photo = tk.PhotoImage(file="./assets/logo.png")
         logo_label = tk.Label(self, image=photo)
+        logo_label.grid(row=0, column=0, padx=50, pady=20)
         logo_label.image = photo
-        logo_label.grid(row=0, column=1, padx=50, pady=20)
 
         '''Start/Stop buttons'''
         button_frame = tk.Frame(self)
+        button_frame.grid(row=1, column=0, padx=50, pady=20)
         start_button = tk.Button(button_frame, text="Start", command=lambda: (start_button.config(state='disabled'), stop_button.config(state='normal'), self.net_mon.start_scan()))
         start_button.pack(side='left')
         stop_button = tk.Button(button_frame, text="Stop", command=lambda: (stop_button.config(state='disabled'), start_button.config(state='normal'), self.net_mon.stop_scan()))
         stop_button.pack(side='left')
-        button_frame.grid(row=1, column=1, padx=50, pady=20)
 
         '''Results'''
         results_frame = tk.Frame(self)
+        results_frame.grid(row=0, column=1)
 
+        # Scrollbar
         results_scroll = tk.Scrollbar(results_frame, orient='vertical')
         results_scroll.pack(side='right', fill='y')
 
-        results_canvas = tk.Canvas(results_frame, bd=0, width=400)
+        # Canvas
+        results_canvas = tk.Canvas(results_frame, bd=0, width=425)
         results_canvas.pack(fill='both', side='left')
 
+        # Display area
         self.results_view_area = tk.Frame(results_canvas)
         self.results_view_area.pack(side='top', fill='both')
+        self.results_view_area.bind("<Configure>", lambda x: results_canvas.config(scrollregion=results_canvas.bbox("all")))  # Resize scroll region when widget size changes
 
+        # Config
         results_canvas.config(yscrollcommand=results_scroll.set)
         results_scroll.config(command=results_canvas.yview)
         results_canvas.create_window((0, 0), window=self.results_view_area, anchor='nw')
 
-        self.results_view_area.bind("<Configure>", lambda x: results_canvas.config(scrollregion=results_canvas.bbox("all")))  # Resize scroll region when widget size changes
-        results_frame.grid(row=0, column=2)
-
         '''Progress'''
         progress_frame = tk.Frame(self)
-        #progress_frame.pack(side='bottom')
+        progress_frame.grid(row=1, column=1)
 
-        sep = Separator(progress_frame, orient="horizontal")
-        sep.pack(fill='both')
+        #sep = Separator(progress_frame, orient="horizontal")
+        #sep.grid(row=1, column=0)
 
-        progress_canvas = tk.Canvas(progress_frame, bd=0, width=400, height=15)
-        progress_canvas.pack(fill='both', side='left')
+        # Current IP Address
+        ip_progress_frame = tk.Frame(progress_frame)
+        ip_progress_frame.grid(row=0, column=0)
 
-        self.progress_view_area = tk.Frame(progress_canvas)
-        self.progress_view_area.pack(side='top', fill='both')
+        progress_canvas = tk.Canvas(ip_progress_frame, bd=0, height=15)
+        progress_canvas.pack(side='left')
 
-        progress_canvas.config(yscrollcommand=results_scroll.set)
-        progress_canvas.create_window((0, 0), window=self.progress_view_area, anchor='nw')
-        progress_frame.grid(row=1, column=2)
+        self.progress_view_frame = tk.Frame(progress_canvas)
+        self.progress_view_frame.pack(side='left')
+
+        # IP Progress Bar/ Percentage
+        progress_bar_frame = tk.Frame(progress_frame)
+        progress_bar_frame.grid(row=0, column=1)
+
+        self.scan_progress_bar = Progressbar(progress_bar_frame, orient='horizontal', length=275, mode='determinate')
+        self.scan_progress_bar.grid(row=0, column=1, padx=30, sticky='ew')
+
+        self.scan_percentage_frame = tk.Frame(progress_bar_frame)
+        self.scan_percentage_frame.grid(row=0, column=1)
 
     '''Program description window'''
     def about_window(self):
@@ -139,7 +154,7 @@ class GUI(tk.Tk):
         '''Thread Slider'''
         thread_frame = tk.Frame(config_win)
         thread_label = tk.Label(thread_frame, text="Threads").pack(side='left')
-        thread_slider = tk.Scale(thread_frame, from_=8, to=self.MAX_THREADS, resolution=8, length=150,
+        thread_slider = tk.Scale(thread_frame, from_=1, to=self.MAX_THREADS, resolution=8, length=150,
                                  orient='horizontal')
         thread_slider.set(self.configuration['THREADS'])
         thread_slider.pack(side='left')
@@ -173,17 +188,19 @@ class GUI(tk.Tk):
             oui_label.grid(row=i+1, column=2, sticky='ew')
             details_button.grid(row=i+1, column=3, sticky='ew')
 
-
     '''Clear our results'''
     def clear_result_window(self):
         for widget in self.results_view_area.winfo_children():
             widget.destroy()
 
-    '''Update scanned list'''
-    def build_status(self, status):
-        progress_label = tk.Label(self.progress_view_area, text=status)
-        progress_label.grid(row=0, column=0, sticky='ew')
-
+    '''Update progress of scan'''
+    def update_status(self, status, scan_count=False):
+        ip_label = tk.Label(self.progress_view_frame, text=status)
+        if scan_count:
+            self.scan_progress_bar['value'] = 1/scan_count  # Update progress/ loading bar here
+            percentage_label = tk.Label(self.scan_percentage_frame, text=format(float(1/scan_count), '.10f') + ' %', font=('Helvetica', '7'))  # Update percentage here
+            percentage_label.grid(row=0, column=1)
+        ip_label.grid(row=0, column=0, sticky='ew')
 
     '''Show more details of a device'''
     def details_window(self, record):
@@ -196,8 +213,8 @@ class GUI(tk.Tk):
         self.progress_label = tk.Label(self.details_frame, text="Gathering information..")
         self.progress_label.grid(row=0, column=0, columnspan=2)
 
-        self.progress_bar = Progressbar(self.details_frame, orient='horizontal', length=100, mode='determinate')
-        self.progress_bar.grid(row=1, column=0, padx=30, columnspan=2, sticky='ew')
+        self.details_progress_bar = Progressbar(self.details_frame, orient='horizontal', length=100, mode='determinate')
+        self.details_progress_bar.grid(row=1, column=0, padx=30, columnspan=2, sticky='ew')
 
         self.ip_label = tk.Label(self.details_frame, text="IP Address:")
         self.ip_result_label = tk.Label(self.details_frame, text="Loading..")
@@ -232,19 +249,19 @@ class GUI(tk.Tk):
 
     def build_details(self, record):
         self.ip_result_label.config(text=str(record.ip))
-        self.progress_bar['value'] = 10
+        self.details_progress_bar['value'] = 10
 
         self.mac_result_label.config(text=str(record.mac))
-        self.progress_bar['value'] = 20
+        self.details_progress_bar['value'] = 20
 
         self.oui_result_label.config(text=str(record.oui))
-        self.progress_bar['value'] = 30
+        self.details_progress_bar['value'] = 30
 
         record.op_sys, record.op_acc = utils.retrieve_os(record)
         self.net_mon.record_list[(utils.get_record_index(record.ip, self.net_mon.record_list))].op_sys = record.op_sys  # Update record object
         self.net_mon.record_list[(utils.get_record_index(record.ip, self.net_mon.record_list))].op_acc = record.op_acc
         self.os_result_label.config(text=record.op_sys + '/ ' + record.op_acc + '%')
-        self.progress_bar['value'] = 70
+        self.details_progress_bar['value'] = 70
 
         try:
             for i, port in enumerate(utils.retrieve_port_status(record)):
@@ -255,7 +272,7 @@ class GUI(tk.Tk):
                 self.port_result_label.grid(row=i+6, column=1, sticky='w')
         except TypeError:
             self.port_placeholder_label.config(text="None detected")
-        self.progress_bar['value'] = 100
+        self.details_progress_bar['value'] = 100
         self.progress_label.config(text="Scan complete")
 
     '''
@@ -263,8 +280,7 @@ class GUI(tk.Tk):
         tk.messagebox.showinfo("Error", msg)
     '''
 
-
 if __name__ == '__main__':
     app = GUI()
     app.resizable(False, False)
-    app.mainloop()
+app.mainloop()

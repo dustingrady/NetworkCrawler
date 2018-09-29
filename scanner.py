@@ -27,7 +27,7 @@ class NetworkMonitor:
     def scan_network(self, scan_type):
         while not self.addr_queue.empty() and self.run_scan:
             addr = self.addr_queue.get()
-            self.gui.build_status('Scanning ' + addr)
+            self.gui.update_status('Scanning ' + addr, self.addr_queue.qsize())
             try:
                 if scan_type == 'ARP':
                     arp_output = []  # Move this somewhere outside of loop(?)
@@ -35,7 +35,7 @@ class NetworkMonitor:
                     mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
                     if response == 0 and mac:
                         print('Ping successful, running ARP command..', flush=True)
-                        self.gui.build_status('Ping successful, running ARP command..')
+                        self.gui.update_status('Ping successful, running ARP command..')
                         self.run_scan = False  # Stop scan after successful ping
                         arp = os.popen('arp -a').read()
                         for i, val in enumerate(arp.split('\n')):
@@ -93,6 +93,7 @@ class NetworkMonitor:
     '''Cancel current scan'''
     def stop_scan(self):
         print('Stopping scan..', flush=True)
+        self.gui.update_status('Scan stopped..')
         self.run_scan = False
         self.addr_queue.queue.clear()
 

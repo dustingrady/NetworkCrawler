@@ -23,7 +23,7 @@ class GUI(tk.Tk):
         self.configuration = fileio.read_config()
         self.net_mon = scanner.NetworkMonitor(self)
         self.MAX_THREADS = 256
-        GUI.update_status(self, 'Press start to begin search')
+        GUI.update_status(self, 'Press "Start" to begin search')
 
     def build_gui(self):
         '''File menu'''
@@ -59,7 +59,7 @@ class GUI(tk.Tk):
         results_scroll.pack(side='right', fill='y')
 
         # Canvas
-        results_canvas = tk.Canvas(results_frame, bd=0, width=425)
+        results_canvas = tk.Canvas(results_frame, bd=0, width=475)
         results_canvas.pack(fill='both', side='left')
 
         # Display area
@@ -197,8 +197,8 @@ class GUI(tk.Tk):
     def update_status(self, status, scan_count=False):
         ip_label = tk.Label(self.progress_view_frame, text=status)
         if scan_count:
-            self.scan_progress_bar['value'] = 1/scan_count  # Update progress/ loading bar here
-            percentage_label = tk.Label(self.scan_percentage_frame, text=format(float(1/scan_count), '.10f') + ' %', font=('Helvetica', '7'))  # Update percentage here
+            self.scan_progress_bar['value'] = ((65536-scan_count)/65536)*100  # Update progress/ loading bar here
+            percentage_label = tk.Label(self.scan_percentage_frame, text=format((float((65536-scan_count)/65536)*100), '.3f') + ' %', font=('Helvetica', '7'))  # Update percentage here
             percentage_label.grid(row=0, column=1)
         ip_label.grid(row=0, column=0, sticky='ew')
 

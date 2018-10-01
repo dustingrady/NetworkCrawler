@@ -18,7 +18,7 @@ import utils
 class GUI(tk.Tk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)  # Make sure to call this when overriding parent methods
-        self.title('v0.1')
+        self.title('Network Crawler v0.1')
         GUI.build_gui(self)
         self.configuration = fileio.read_config()
         self.net_mon = scanner.NetworkMonitor(self)
@@ -54,12 +54,12 @@ class GUI(tk.Tk):
         results_frame = tk.Frame(self)
         results_frame.grid(row=0, column=1)
 
-        # Scrollbar
-        results_scroll = tk.Scrollbar(results_frame, orient='vertical')
-        results_scroll.pack(side='right', fill='y')
+        ## Scrollbar
+        #results_scroll = tk.Scrollbar(results_frame, orient='vertical')
+        #results_scroll.pack(side='right', fill='y')
 
         # Canvas
-        results_canvas = tk.Canvas(results_frame, bd=0, width=475)
+        results_canvas = tk.Canvas(results_frame, bd=0, width=625)
         results_canvas.pack(fill='both', side='left')
 
         # Display area
@@ -68,9 +68,9 @@ class GUI(tk.Tk):
         self.results_view_area.bind("<Configure>", lambda x: results_canvas.config(scrollregion=results_canvas.bbox("all")))  # Resize scroll region when widget size changes
 
         # Config
-        results_canvas.config(yscrollcommand=results_scroll.set)
-        results_scroll.config(command=results_canvas.yview)
-        results_canvas.create_window((0, 0), window=self.results_view_area, anchor='nw')
+        #results_canvas.config(yscrollcommand=results_scroll.set)
+        #results_scroll.config(command=results_canvas.yview)
+        #results_canvas.create_window((0, 0), window=self.results_view_area, anchor='nw')
 
         '''Progress'''
         progress_frame = tk.Frame(self)
@@ -168,25 +168,28 @@ class GUI(tk.Tk):
 
     '''Updates results_window'''
     def build_result(self):
-        ip_header_label = tk.Label(self.results_view_area, text="IP", font=('Helvetica', 12, 'bold'))
-        ip_header_label.grid(row=0, column=0)
+        tree = tk.ttk.Treeview(self.results_view_area, height=7, columns=('IP', 'MAC', 'Vendor'))
+        tree.heading('#0', text='IP')
+        tree.heading('#1', text='MAC')
+        tree.heading('#2', text='Vendor')
+        tree.heading('#3', text='Details')
 
-        mac_header_label = tk.Label(self.results_view_area, text="MAC", font=('Helvetica', 12, 'bold'))
-        mac_header_label.grid(row=0, column=1)
+        tree.column('#0', minwidth=125, width=125, stretch=False)
+        tree.column('#1', minwidth=125, width=125, stretch=False)
+        tree.column('#2', minwidth=150, width=150, stretch=False)
+        tree.column('#3', minwidth=125, width=125, stretch=False)
 
-        vendor_header_label = tk.Label(self.results_view_area, text="Vendor", font=('Helvetica', 12, 'bold'))
-        vendor_header_label.grid(row=0, column=2)
+        tree.grid(row=0, column=1, sticky='nsew')
+
+        style = tk.ttk.Style(self.results_view_area)
+        style.configure('Treeview', rowheight=25)
 
         for i, rec in enumerate(self.net_mon.record_list):
-            ip_label = tk.Label(self.results_view_area, text=str(rec.ip), background='gray80' if i % 2 is 0 else 'gray60')
-            mac_label = tk.Label(self.results_view_area, text=str(rec.mac), background='gray80' if i % 2 is 0 else 'gray60')
-            oui_label = tk.Label(self.results_view_area, text=str(rec.oui), background='gray80' if i % 2 is 0 else 'gray60')
+            tree.insert('', 'end', tags='evenrow' if i % 2 else 'oddrow', text=str(rec.ip), values=(str(rec.mac), str(rec.oui)))
             details_button = tk.Button(self.results_view_area, text="Details", command=lambda i=i: GUI.details_window(self, self.net_mon.record_list[i]))
-
-            ip_label.grid(row=i+1, column=0, sticky='ew')
-            mac_label.grid(row=i+1, column=1, sticky='ew')
-            oui_label.grid(row=i+1, column=2, sticky='ew')
-            details_button.grid(row=i+1, column=3, sticky='ew')
+            details_button.place(x=430, y=(i+1)*25, width=75)
+        tree.tag_configure('evenrow', background='gray80')
+        tree.tag_configure('oddrow', background='gray60')
 
     '''Clear our results'''
     def clear_result_window(self):
@@ -282,5 +285,6 @@ class GUI(tk.Tk):
 
 if __name__ == '__main__':
     app = GUI()
+    app.geometry('925x275')
     app.resizable(False, False)
 app.mainloop()

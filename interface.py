@@ -2,12 +2,9 @@
 #Purpose: Draw GUI
 #Status: In development
 #To do:
-#   -Align results to one side
 #   -Clean up self declarations outside of init
-#   -Clear list when user clicks start
-#   -Prevent loading bar and status from moving during scan
 
-from tkinter.ttk import Progressbar, Separator
+from tkinter.ttk import Progressbar
 import tkinter as tk
 import threading
 import scanner
@@ -54,10 +51,6 @@ class GUI(tk.Tk):
         results_frame = tk.Frame(self)
         results_frame.grid(row=0, column=1)
 
-        ## Scrollbar
-        #results_scroll = tk.Scrollbar(results_frame, orient='vertical')
-        #results_scroll.pack(side='right', fill='y')
-
         # Canvas
         results_canvas = tk.Canvas(results_frame, bd=0, width=625)
         results_canvas.pack(fill='both', side='left')
@@ -67,17 +60,9 @@ class GUI(tk.Tk):
         self.results_view_area.pack(side='top', fill='both')
         self.results_view_area.bind("<Configure>", lambda x: results_canvas.config(scrollregion=results_canvas.bbox("all")))  # Resize scroll region when widget size changes
 
-        # Config
-        #results_canvas.config(yscrollcommand=results_scroll.set)
-        #results_scroll.config(command=results_canvas.yview)
-        #results_canvas.create_window((0, 0), window=self.results_view_area, anchor='nw')
-
         '''Progress'''
         progress_frame = tk.Frame(self)
         progress_frame.grid(row=1, column=1)
-
-        #sep = Separator(progress_frame, orient="horizontal")
-        #sep.grid(row=1, column=0)
 
         # Current IP Address
         ip_progress_frame = tk.Frame(progress_frame)
@@ -197,12 +182,12 @@ class GUI(tk.Tk):
             widget.destroy()
 
     '''Update progress of scan'''
-    def update_status(self, status, scan_count=False):
+    def update_status(self, status, scan_count=0):
         ip_label = tk.Label(self.progress_view_frame, text=status)
         if scan_count:
             self.scan_progress_bar['value'] = ((65536-scan_count)/65536)*100  # Update progress/ loading bar here
-            percentage_label = tk.Label(self.scan_percentage_frame, text=format((float((65536-scan_count)/65536)*100), '.3f') + ' %', font=('Helvetica', '7'))  # Update percentage here
-            percentage_label.grid(row=0, column=1)
+            #percentage_label = tk.Label(self.scan_percentage_frame, text=format((float((65536-scan_count)/65536)*100), '.3f') + ' %', font=('Helvetica', '7'))  # Update percentage here
+            #percentage_label.grid(row=0, column=0)
         ip_label.grid(row=0, column=0, sticky='ew')
 
     '''Show more details of a device'''
@@ -282,6 +267,7 @@ class GUI(tk.Tk):
     def error_window(self, msg):
         tk.messagebox.showinfo("Error", msg)
     '''
+
 
 if __name__ == '__main__':
     app = GUI()

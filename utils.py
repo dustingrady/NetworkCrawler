@@ -12,6 +12,7 @@ def get_record_index(ip, record_list):
             return i
     return 'No record found'
 
+
 '''Collect OUI (vendor)'''
 def retrieve_oui(record):
     mac = EUI(record.mac)

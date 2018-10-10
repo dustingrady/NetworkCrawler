@@ -139,7 +139,7 @@ class GUI(tk.Tk):
         '''Thread Slider'''
         thread_frame = tk.Frame(config_win)
         thread_label = tk.Label(thread_frame, text="Threads").pack(side='left')
-        thread_slider = tk.Scale(thread_frame, from_=1, to=self.MAX_THREADS, resolution=8, length=150,
+        thread_slider = tk.Scale(thread_frame, from_=8, to=self.MAX_THREADS, resolution=8, length=150,
                                  orient='horizontal')
         thread_slider.set(self.configuration['THREADS'])
         thread_slider.pack(side='left')

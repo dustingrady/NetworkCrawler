@@ -2,6 +2,7 @@
 #Purpose: Crawl through network and discover connected devices
 #Status: In development
 
+from subprocess import Popen, PIPE
 from getmac import get_mac_address
 import tkinter as tk
 import threading
@@ -29,14 +30,18 @@ class NetworkMonitor:
             addr = self.addr_queue.get()
             self.gui.update_status('Scanning ' + addr, self.addr_queue.qsize())
             try:
+                mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
+                process = Popen('ping -n 1 ' + addr, stdout=PIPE)
+                (output, err) = process.communicate()
+                exit_code = process.wait()
+
                 if scan_type == 'ARP':
                     arp_output = []  # Move this somewhere outside of loop(?)
-                    response = os.system('ping -n 1 ' + addr + ' > nul')
-                    mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
-                    if response == 0 and mac:
-                        print('Ping successful, running ARP command..', flush=True)
-                        self.gui.update_status('Ping successful, running ARP command..')
+                    if exit_code == 0 and mac and "TTL expired in transit" not in str(output):
                         self.run_scan = False  # Stop scan after successful ping
+                        print('Ping successful, running ARP command..', flush=True)
+                        self.gui.scan_progress_bar['value'] = 100
+                        self.gui.update_status('Ping successful, running ARP command..')
                         arp = os.popen('arp -a').read()
                         for i, val in enumerate(arp.split('\n')):
                             arp_output.append(val.split())
@@ -49,7 +54,7 @@ class NetworkMonitor:
 
                                 print('IP: ', record.ip,
                                       '\tMAC: ', record.mac,
-                                      '\type: ', record.type,
+                                      '\tType: ', record.type,
                                       '\tVendor: ', record.oui,
                                       '\tOS: ', record.op_sys,
                                       flush=True)
@@ -58,9 +63,7 @@ class NetworkMonitor:
                         fileio.build_report(self.record_list)
 
                 if scan_type == 'Ping':
-                    response = os.system('ping -n 1 ' + addr + ' > nul')
-                    mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
-                    if response == 0 and mac:
+                    if exit_code == 0 and mac and "TTL expired in transit" not in str(output):
                         record = Record()
                         record.ip = addr
                         record.mac = mac

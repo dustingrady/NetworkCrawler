@@ -36,7 +36,6 @@ class NetworkMonitor:
                 exit_code = process.wait()
 
                 if scan_type == 'ARP':
-                    arp_output = []  # Move this somewhere outside of loop(?)
                     if exit_code == 0 and mac and "TTL expired in transit" not in str(output):
                         self.run_scan = False  # Stop scan after successful ping
                         print('Ping successful, running ARP command..', flush=True)
@@ -44,12 +43,11 @@ class NetworkMonitor:
                         self.gui.update_status('Ping successful, running ARP command..')
                         arp = os.popen('arp -a').read()
                         for i, val in enumerate(arp.split('\n')):
-                            arp_output.append(val.split())
-                            if len(arp_output[i]) == 3:
+                            if len(val.split()) == 3:
                                 record = Record()
-                                record.ip = arp_output[i][0]
-                                record.mac = arp_output[i][1]
-                                record.type = arp_output[i][2]
+                                record.ip = val.split()[0]
+                                record.mac = val.split()[1]
+                                record.type = val.split()[2]
                                 record.oui = utils.retrieve_oui(record)
 
                                 print('IP: ', record.ip,

@@ -24,7 +24,7 @@ This tool may be suited for:
 * [Python 3] - Python for everything else
 
 #### OS Support
-* Windows
+* Linux (Tested on Kubuntu 18.04)
 
 
 [![paypal](https://i.imgur.com/wsX84nD.png)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=W2FJJJAM7EESC&item_name=Development+efforts/+coffee+fund&currency_code=USD&source=url)

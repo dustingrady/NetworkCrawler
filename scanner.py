@@ -5,6 +5,7 @@
 from subprocess import Popen, PIPE
 from getmac import get_mac_address
 import tkinter as tk
+import subprocess
 import threading
 import warnings
 import fileio
@@ -31,7 +32,7 @@ class NetworkMonitor:
             self.gui.update_status('Scanning ' + addr, self.addr_queue.qsize())
             try:
                 mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
-                process = Popen('ping -n 1 ' + addr, stdout=PIPE)
+                process = subprocess.Popen('ping -c 1 ' + addr, shell=True)
                 (output, err) = process.communicate()
                 exit_code = process.wait()
 
@@ -97,6 +98,7 @@ class NetworkMonitor:
         self.gui.update_status('Scan stopped..')
         self.run_scan = False
         self.addr_queue.queue.clear()
+
 
 class Record:
     def __init__(self):

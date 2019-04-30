@@ -89,7 +89,7 @@ class GUI(tk.Tk):
         about_win = tk.Toplevel()
         about_win.wm_title("About")
         about_label = tk.Label(about_win,
-                               text="Network Discovery Tool 2018\n A multithreaded network discovery tool designed to discover\n devices within a network and provide reports on the information gathered")
+                               text="Network Discovery Tool 2019\n A multithreaded network discovery tool designed to discover\n devices within a network and provide reports on the information gathered")
         about_label.grid(row=0, column=0, padx=15, pady=15)
         #about_win.geometry('325x70')
         about_win.grab_set()  # Modal
@@ -153,28 +153,28 @@ class GUI(tk.Tk):
 
     '''Updates results_window'''
     def build_result(self):
-        tree = tk.ttk.Treeview(self.results_view_area, height=7, columns=('IP', 'MAC', 'Vendor'))
-        tree.heading('#0', text='IP')
-        tree.heading('#1', text='MAC')
-        tree.heading('#2', text='Vendor')
-        tree.heading('#3', text='Details')
+        self.tree = tk.ttk.Treeview(self.results_view_area, height=7, columns=('IP', 'MAC', 'Vendor'))
+        self.tree.heading('#0', text='IP')
+        self.tree.heading('#1', text='MAC')
+        self.tree.heading('#2', text='Vendor')
+        self.tree.heading('#3', text='Details')
 
-        tree.column('#0', minwidth=125, width=125, stretch=False)
-        tree.column('#1', minwidth=125, width=125, stretch=False)
-        tree.column('#2', minwidth=150, width=150, stretch=False)
-        tree.column('#3', minwidth=125, width=125, stretch=False)
+        self.tree.column('#0', minwidth=125, width=125, stretch=False)
+        self.tree.column('#1', minwidth=125, width=125, stretch=False)
+        self.tree.column('#2', minwidth=150, width=150, stretch=False)
+        self.tree.column('#3', minwidth=125, width=125, stretch=False)
 
-        tree.grid(row=0, column=1, sticky='nsew')
+        self.tree.grid(row=0, column=1, sticky='nsew')
 
         style = tk.ttk.Style(self.results_view_area)
         style.configure('Treeview', rowheight=25)
 
         for i, rec in enumerate(self.net_mon.record_list):
-            tree.insert('', 'end', tags='evenrow' if i % 2 else 'oddrow', text=str(rec.ip), values=(str(rec.mac), str(rec.oui)))
-            details_button = tk.Button(self.results_view_area, text="Details", command=lambda i=i: GUI.details_window(self, self.net_mon.record_list[i]))
-            details_button.place(x=430, y=(i+1)*25, width=75)
-        tree.tag_configure('evenrow', background='gray80')
-        tree.tag_configure('oddrow', background='gray60')
+            self.tree.insert('', 'end', tags=('evenrow' if i % 2 else 'oddrow', i), text=str(rec.ip), values=(str(rec.mac), str(rec.oui), "Click Me"))
+            self.tree.bind("<<TreeviewSelect>>", lambda i: GUI.details_window(self, self.net_mon.record_list[int(self.tree.item(self.tree.selection()[0], "tags")[1])]))  # Referencing records using tag of their index
+
+        self.tree.tag_configure('evenrow', background='gray80')
+        self.tree.tag_configure('oddrow', background='gray60')
 
     '''Clear our results'''
     def clear_result_window(self):
@@ -232,7 +232,7 @@ class GUI(tk.Tk):
         self.details_thread = threading.Thread(target=lambda: (GUI.build_details(self, record)))  # Start thread to get results
         self.details_thread.start()
 
-        details_win.grab_set()  # Modal
+        #details_win.grab_set()  # Modal (Causing error)
         details_win.resizable(False, False)
 
     def build_details(self, record):

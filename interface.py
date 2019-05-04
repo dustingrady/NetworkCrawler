@@ -1,8 +1,6 @@
 #Author: Dustin Grady
 #Purpose: Draw GUI
 #Status: In development
-#To do:
-#   -Clean up self declarations outside of init
 
 from tkinter.ttk import Progressbar
 import tkinter as tk
@@ -15,7 +13,7 @@ import utils
 class GUI(tk.Tk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)  # Make sure to call this when overriding parent methods
-        self.title('Network Crawler v0.1')
+        self.title('Network Crawler v0.2')
         GUI.build_gui(self)
         self.configuration = fileio.read_config()
         self.net_mon = scanner.NetworkMonitor(self)
@@ -157,12 +155,10 @@ class GUI(tk.Tk):
         self.tree.heading('#0', text='IP')
         self.tree.heading('#1', text='MAC')
         self.tree.heading('#2', text='Vendor')
-        self.tree.heading('#3', text='Details')
 
-        self.tree.column('#0', minwidth=125, width=125, stretch=False)
-        self.tree.column('#1', minwidth=125, width=125, stretch=False)
-        self.tree.column('#2', minwidth=150, width=150, stretch=False)
-        self.tree.column('#3', minwidth=125, width=125, stretch=False)
+        self.tree.column('#0', minwidth=125, width=175, stretch=False)
+        self.tree.column('#1', minwidth=125, width=175, stretch=False)
+        self.tree.column('#2', minwidth=150, width=200, stretch=False)
 
         self.tree.grid(row=0, column=1, sticky='nsew')
 
@@ -170,8 +166,11 @@ class GUI(tk.Tk):
         style.configure('Treeview', rowheight=25)
 
         for i, rec in enumerate(self.net_mon.record_list):
-            self.tree.insert('', 'end', tags=('evenrow' if i % 2 else 'oddrow', i), text=str(rec.ip), values=(str(rec.mac), str(rec.oui), "Click Me"))
-            self.tree.bind("<<TreeviewSelect>>", lambda i: GUI.details_window(self, self.net_mon.record_list[int(self.tree.item(self.tree.selection()[0], "tags")[1])]))  # Referencing records using tag of their index
+            self.entry = self.tree.insert('', 'end', tags=('evenrow' if i % 2 else 'oddrow', i), text=str(rec.ip), values=(str(rec.mac), str(rec.oui)))
+            self.tree.bind("<<TreeviewOpen>>", lambda i: GUI.update_tree(self, self.net_mon.record_list[int(self.tree.item(self.tree.selection()[0], "tags")[1])]))  # Referencing records using tag of their index
+
+            self.tree.insert(self.entry, 1, iid='os_entry_'+str(rec.ip), text='OS: Loading..')
+            self.tree.insert(self.entry, 1, iid='port_entry_'+str(rec.ip), text='Ports: Loading..')
 
         self.tree.tag_configure('evenrow', background='gray80')
         self.tree.tag_configure('oddrow', background='gray60')
@@ -186,82 +185,22 @@ class GUI(tk.Tk):
         ip_label = tk.Label(self.progress_view_frame, text=status)
         if scan_count:
             self.scan_progress_bar['value'] = ((65536-scan_count)/65536)*100  # Update progress/ loading bar here
-            #percentage_label = tk.Label(self.scan_percentage_frame, text=format((float((65536-scan_count)/65536)*100), '.3f') + ' %', font=('Helvetica', '7'))  # Update percentage here
-            #percentage_label.grid(row=0, column=0)
+            percentage_label = tk.Label(self.scan_percentage_frame, text=format((float((65536-scan_count)/65536)*100), '.3f') + ' %', font=('Helvetica', '7'), bg='gray75', fg='black')  # Update percentage here
+            percentage_label.grid(row=0, column=0)
+
         ip_label.grid(row=0, column=0, sticky='ew')
 
-    '''Show more details of a device'''
-    def details_window(self, record):
-        details_win = tk.Toplevel()
-        details_win.title('Details')
+    '''Update treeview list items'''
+    def update_tree(self, record):
+        print('update_tree was called!!!!!!!!!!')  # Testing
+        #record.op_sys, record.op_acc = utils.retrieve_os(record)  # Entry will expand after function returns
+        #record.op_sys, record.op_acc = threading.Thread(target=lambda: utils.retrieve_os(record))  # Wanting to open window while this executes, then populate after it returns
+        #self.tree.insert(self.tree.focus(), 1, text='OS/ Confidence: {os}/ {conf}'.format(os=str(record.op_sys), conf=str(record.op_acc)))
 
-        self.details_frame = tk.Frame(details_win)
-        self.details_frame.pack(side='top')
-
-        self.progress_label = tk.Label(self.details_frame, text="Gathering information..")
-        self.progress_label.grid(row=0, column=0, columnspan=2)
-
-        self.details_progress_bar = Progressbar(self.details_frame, orient='horizontal', length=100, mode='determinate')
-        self.details_progress_bar.grid(row=1, column=0, padx=30, columnspan=2, sticky='ew')
-
-        self.ip_label = tk.Label(self.details_frame, text="IP Address:")
-        self.ip_result_label = tk.Label(self.details_frame, text="Loading..")
-        self.ip_label.grid(row=2, column=0, padx=10, sticky='w')
-        self.ip_result_label.grid(row=2, padx=10, column=1, sticky='w')
-
-        self.mac_label = tk.Label(self.details_frame, text="MAC Address:")
-        self.mac_result_label = tk.Label(self.details_frame, text="Loading..")
-        self.mac_label.grid(row=3, column=0, padx=10, sticky='w')
-        self.mac_result_label.grid(row=3, padx=10, column=1, sticky='w')
-
-        self.oui_label = tk.Label(self.details_frame, text="Vendor:")
-        self.oui_result_label = tk.Label(self.details_frame, text="Loading..")
-        self.oui_label.grid(row=4, column=0, padx=10, sticky='w')
-        self.oui_result_label.grid(row=4, padx=10, column=1, sticky='w')
-
-        self.os_label = tk.Label(self.details_frame, text="OS/ Accuracy:")
-        self.os_result_label = tk.Label(self.details_frame, text="Loading..")
-        self.os_label.grid(row=5, column=0, padx=10, sticky='w')
-        self.os_result_label.grid(row=5, padx=10, column=1, sticky='w')
-
-        self.port_label = tk.Label(self.details_frame, text="Port Status:")
-        self.port_placeholder_label = tk.Label(self.details_frame, text="Loading..")
-        self.port_label.grid(row=6, column=0, padx=10, sticky='w')
-        self.port_placeholder_label.grid(row=6, padx=10, column=1, sticky='w')
-
-        self.details_thread = threading.Thread(target=lambda: (GUI.build_details(self, record)))  # Start thread to get results
-        self.details_thread.start()
-
-        #details_win.grab_set()  # Modal (Causing error)
-        details_win.resizable(False, False)
-
-    def build_details(self, record):
-        self.ip_result_label.config(text=str(record.ip))
-        self.details_progress_bar['value'] = 10
-
-        self.mac_result_label.config(text=str(record.mac))
-        self.details_progress_bar['value'] = 20
-
-        self.oui_result_label.config(text=str(record.oui))
-        self.details_progress_bar['value'] = 30
-
-        record.op_sys, record.op_acc = utils.retrieve_os(record)
-        self.net_mon.record_list[(utils.get_record_index(record.ip, self.net_mon.record_list))].op_sys = record.op_sys  # Update record object
-        self.net_mon.record_list[(utils.get_record_index(record.ip, self.net_mon.record_list))].op_acc = record.op_acc
-        self.os_result_label.config(text=record.op_sys + '/ ' + record.op_acc + '%')
-        self.details_progress_bar['value'] = 70
-
-        try:
-            for i, port in enumerate(utils.retrieve_port_status(record)):
-                self.net_mon.record_list[(utils.get_record_index(record.ip, self.net_mon.record_list))].ports.append(port)
-                self.port_placeholder_label.config(text="")
-                self.port_result_label = tk.Label(self.details_frame)
-                self.port_result_label.config(text=port)
-                self.port_result_label.grid(row=i+6, column=1, sticky='w')
-        except TypeError:
-            self.port_placeholder_label.config(text="None detected")
-        self.details_progress_bar['value'] = 100
-        self.progress_label.config(text="Scan complete")
+        ports = utils.retrieve_port_status(record)  # Entry will expand after function returns
+        #ports = threading.Thread(target=lambda: utils.retrieve_port_status(record))  # Wanting to open window while this executes, then populate after it returns
+        #self.tree.insert(self.tree.focus(), 1, text='Ports: {ports}'.format(ports=ports))
+        self.tree.set('port_entry_'+str(record.ip), column='IP', value='Ports: {ports}'.format(ports=ports))
 
     '''
     def error_window(self, msg):

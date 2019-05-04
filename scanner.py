@@ -50,13 +50,14 @@ class NetworkMonitor:
                                 record.mac = val.split()[1]
                                 record.type = val.split()[2]
                                 record.oui = utils.retrieve_oui(record)
-
+                                '''
                                 print('IP: ', record.ip,
                                       '\tMAC: ', record.mac,
                                       '\tType: ', record.type,
                                       '\tVendor: ', record.oui,
                                       '\tOS: ', record.op_sys,
                                       flush=True)
+                                '''
                                 self.record_list.append(record)
                                 self.gui.build_result()
                         fileio.build_report(self.record_list)
@@ -68,11 +69,13 @@ class NetworkMonitor:
                         record.mac = mac
                         record.type = None  # Unavailable for this method
                         record.oui = utils.retrieve_oui(record)
+                        '''
                         print('IP: ', record.ip,
                               '\tMAC: ', record.mac,
                               '\tVendor: ', record.oui,
                               '\tOS: ', record.op_sys,
                               flush=True)
+                        '''
                         self.record_list.append(record)
                         self.gui.build_result()
                         fileio.build_report(self.record_list)

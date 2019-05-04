@@ -32,8 +32,8 @@ def retrieve_os(record):
             os = nm[record.ip]['osmatch'][0]['name']
             conf = nm[record.ip]['osmatch'][0]['accuracy']
     except:
-        os = 'None detected'
-        conf = '0'
+        os = 'None detected. Running as admin?'
+        conf = ''
     return [os, conf]
 
 

@@ -168,9 +168,11 @@ class GUI(tk.Tk):
         for i, rec in enumerate(self.net_mon.record_list):
             self.entry = self.tree.insert('', 'end', tags=('evenrow' if i % 2 else 'oddrow', i), text=str(rec.ip), values=(str(rec.mac), str(rec.oui)))
             self.tree.bind("<<TreeviewOpen>>", lambda i: GUI.update_tree(self, self.net_mon.record_list[int(self.tree.item(self.tree.selection()[0], "tags")[1])]))  # Referencing records using tag of their index
+            #self.tree.bind("<<TreeviewSelect>>", lambda i: GUI.update_tree(self, self.net_mon.record_list[int(self.tree.item(self.tree.selection()[0], "tags")[1])]))  # Referencing records using tag of their index
 
-            self.tree.insert(self.entry, 1, iid='os_entry_'+str(rec.ip), text='OS: Loading..')
-            self.tree.insert(self.entry, 1, iid='port_entry_'+str(rec.ip), text='Ports: Loading..')
+
+            self.tree.insert(self.entry, 0, iid='os_entry_'+str(rec.ip), text='OS: Loading..')
+            self.tree.insert(self.entry, 0, iid='port_entry_'+str(rec.ip), text='Ports: Loading..')
 
         self.tree.tag_configure('evenrow', background='gray80')
         self.tree.tag_configure('oddrow', background='gray60')
@@ -193,14 +195,17 @@ class GUI(tk.Tk):
     '''Update treeview list items'''
     def update_tree(self, record):
         print('update_tree was called!!!!!!!!!!')  # Testing
-        #record.op_sys, record.op_acc = utils.retrieve_os(record)  # Entry will expand after function returns
+
+        record.op_sys, record.op_acc = utils.retrieve_os(record)  # Entry will expand after function returns
         #record.op_sys, record.op_acc = threading.Thread(target=lambda: utils.retrieve_os(record))  # Wanting to open window while this executes, then populate after it returns
-        #self.tree.insert(self.tree.focus(), 1, text='OS/ Confidence: {os}/ {conf}'.format(os=str(record.op_sys), conf=str(record.op_acc)))
+        self.tree.set('os_entry_'+str(record.ip), 0, value='OS/ Confidence: {os} {conf}'.format(os=str(record.op_sys), conf=str(record.op_acc)))
+        #self.tree.insert(self.entry, 0, text='OS/ Confidence: {os} {conf}'.format(os=str(record.op_sys), conf=str(record.op_acc)))
 
         ports = utils.retrieve_port_status(record)  # Entry will expand after function returns
         #ports = threading.Thread(target=lambda: utils.retrieve_port_status(record))  # Wanting to open window while this executes, then populate after it returns
-        #self.tree.insert(self.tree.focus(), 1, text='Ports: {ports}'.format(ports=ports))
-        self.tree.set('port_entry_'+str(record.ip), column='IP', value='Ports: {ports}'.format(ports=ports))
+        self.tree.set('port_entry_'+str(record.ip), 0, value='Ports: {ports}'.format(ports=ports))
+        #self.tree.insert(self.entry, 0, text='Ports: {ports}'.format(ports=ports))
+
 
     '''
     def error_window(self, msg):
@@ -210,6 +215,6 @@ class GUI(tk.Tk):
 
 if __name__ == '__main__':
     app = GUI()
-    app.geometry('925x275')
+    app.geometry('1000x300')
     app.resizable(False, False)
 app.mainloop()

@@ -1,6 +1,6 @@
 # NetCrawler
 
-![Capture](https://i.imgur.com/cZ28LVQ.png)
+![Capture](https://i.imgur.com/W77Owex.png)
 
 NetCrawler is a network discovery tool (currently under development) that attempts to reveal information about connected devices within a network.
 

@@ -165,22 +165,19 @@ class GUI(tk.Tk):
         style = tk.ttk.Style(self.results_view_area)
         style.configure('Treeview', rowheight=25)
 
-        for i, rec in enumerate(self.net_mon.record_list):
-            self.entry = self.tree.insert('', 'end', tags=('evenrow' if i % 2 else 'oddrow', i), text=str(rec.ip), values=(str(rec.mac), str(rec.oui)))
+        for i, record in enumerate(self.net_mon.record_list):
+            self.entry = self.tree.insert('', 'end', tags=('evenrow' if i % 2 else 'oddrow', i), text=str(record.ip), values=(str(record.mac), str(record.oui)))
+
             self.tree.bind("<<TreeviewOpen>>", lambda i: GUI.update_tree(self, self.net_mon.record_list[int(self.tree.item(self.tree.selection()[0], "tags")[1])]))  # Referencing records using tag of their index
             #self.tree.bind("<<TreeviewSelect>>", lambda i: GUI.update_tree(self, self.net_mon.record_list[int(self.tree.item(self.tree.selection()[0], "tags")[1])]))  # Referencing records using tag of their index
 
+            self.tree.insert(self.entry, 'end', iid='os_entry_'+str(record.ip), text='OS/ Confidence: ')
+            self.tree.insert(self.entry, 'end', iid='port_entry_'+str(record.ip), text='Ports: ')
 
-            self.tree.insert(self.entry, 0, iid='os_entry_'+str(rec.ip), text='OS: Loading..')
-            self.tree.insert(self.entry, 0, iid='port_entry_'+str(rec.ip), text='Ports: Loading..')
+            #print("IN BUILD_RESULT", self.tree.set('os_entry_'+str(record.ip)))  # Testing
 
         self.tree.tag_configure('evenrow', background='gray80')
         self.tree.tag_configure('oddrow', background='gray60')
-
-    '''Clear our results'''
-    def clear_result_window(self):
-        for widget in self.results_view_area.winfo_children():
-            widget.destroy()
 
     '''Update progress of scan'''
     def update_status(self, status, scan_count=0):
@@ -196,16 +193,29 @@ class GUI(tk.Tk):
     def update_tree(self, record):
         print('update_tree was called!!!!!!!!!!')  # Testing
 
-        record.op_sys, record.op_acc = utils.retrieve_os(record)  # Entry will expand after function returns
-        #record.op_sys, record.op_acc = threading.Thread(target=lambda: utils.retrieve_os(record))  # Wanting to open window while this executes, then populate after it returns
-        self.tree.set('os_entry_'+str(record.ip), 0, value='OS/ Confidence: {os} {conf}'.format(os=str(record.op_sys), conf=str(record.op_acc)))
-        #self.tree.insert(self.entry, 0, text='OS/ Confidence: {os} {conf}'.format(os=str(record.op_sys), conf=str(record.op_acc)))
+        if not record.details_processed:
+            details = utils.retrieve_all_details(record)
+            self.tree.set('os_entry_' + str(record.ip), '#1', value='Loading..')
+            record.op_sys, record.op_acc = utils.retrieve_os(record)  # Entry will expand after function returns
+            self.tree.set('os_entry_' + str(record.ip), '#1', value='{os} {conf}%'.format(os=details['os'][0], conf=details['os'][1]) if record.op_acc else '{os} {conf}'.format(os=details['os'][0], conf=details['os'][1]))  # Testing
 
-        ports = utils.retrieve_port_status(record)  # Entry will expand after function returns
-        #ports = threading.Thread(target=lambda: utils.retrieve_port_status(record))  # Wanting to open window while this executes, then populate after it returns
-        self.tree.set('port_entry_'+str(record.ip), 0, value='Ports: {ports}'.format(ports=ports))
-        #self.tree.insert(self.entry, 0, text='Ports: {ports}'.format(ports=ports))
+            self.tree.set('port_entry_' + str(record.ip), '#1', value='Loading..')  # Testing
+            ports = utils.retrieve_port_status(record)  # Entry will expand after function returns
+            self.tree.set('port_entry_' + str(record.ip), '#1', value='{ports}'.format(ports=details['ports']))  # Testing
+            '''
+            self.tree.set('os_entry_'+str(record.ip), '#1', value='Loading..')
+            record.op_sys, record.op_acc = utils.retrieve_os(record)  # Entry will expand after function returns
+            self.tree.set('os_entry_'+str(record.ip), '#1', value='{os} {conf}%'.format(os=record.op_sys, conf=record.op_acc) if record.op_acc else '{os} {conf}'.format(os=record.op_sys, conf=record.op_acc))  # Testing
 
+            self.tree.set('port_entry_'+str(record.ip), '#1', value='Loading..')  # Testing
+            ports = utils.retrieve_port_status(record)  # Entry will expand after function returns
+            self.tree.set('port_entry_'+str(record.ip), '#1', value='{ports}'.format(ports=ports))  # Testing
+            '''
+    '''Clear our results'''
+
+    def clear_result_window(self):
+        for widget in self.results_view_area.winfo_children():
+            widget.destroy()
 
     '''
     def error_window(self, msg):

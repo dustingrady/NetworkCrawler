@@ -30,57 +30,57 @@ class NetworkMonitor:
         while not self.addr_queue.empty() and self.run_scan:
             addr = self.addr_queue.get()
             self.gui.update_status('Scanning ' + addr, self.addr_queue.qsize())
-            try:
-                mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
-                process = subprocess.Popen('ping -c 1 ' + addr, shell=True)
-                (output, err) = process.communicate()
-                exit_code = process.wait()
+            #try:
+            mac = get_mac_address(ip=addr)  # Throws runtime warning after first set of threads completes..?
+            process = subprocess.Popen('ping -c 1 ' + addr, shell=True)
+            (output, err) = process.communicate()
+            exit_code = process.wait()
 
-                if scan_type == 'ARP':
-                    if exit_code == 0 and mac and "TTL expired in transit" not in str(output):
-                        self.run_scan = False  # Stop scan after successful ping
-                        print('Ping successful, running ARP command..', flush=True)
-                        self.gui.scan_progress_bar['value'] = 100
-                        self.gui.update_status('Ping successful, running ARP command..')
-                        arp = os.popen('arp -a').read()
-                        for i, val in enumerate(arp.split('\n')):
-                            if len(val.split()) == 3:
-                                record = Record()
-                                record.ip = val.split()[0]
-                                record.mac = val.split()[1]
-                                record.type = val.split()[2]
-                                record.oui = utils.retrieve_oui(record)
-                                '''
-                                print('IP: ', record.ip,
-                                      '\tMAC: ', record.mac,
-                                      '\tType: ', record.type,
-                                      '\tVendor: ', record.oui,
-                                      '\tOS: ', record.op_sys,
-                                      flush=True)
-                                '''
-                                self.record_list.append(record)
-                                self.gui.build_result()
-                        fileio.build_report(self.record_list)
+            if scan_type == 'ARP':
+                if exit_code == 0 and mac and "TTL expired in transit" not in str(output):
+                    self.run_scan = False  # Stop scan after successful ping
+                    print('Ping successful, running ARP command..', flush=True)
+                    self.gui.scan_progress_bar['value'] = 100
+                    self.gui.update_status('Ping successful, running ARP command..')
+                    arp = os.popen('arp -a').read()
+                    for i, val in enumerate(arp.split('\n')):
+                        if len(val.split()) == 3:
+                            record = Record()
+                            record.ip = val.split()[0]
+                            record.mac = val.split()[1]
+                            record.type = val.split()[2]
+                            record.oui = utils.retrieve_oui(record)
+                            '''
+                            print('IP: ', record.ip,
+                                  '\tMAC: ', record.mac,
+                                  '\tType: ', record.type,
+                                  '\tVendor: ', record.oui,
+                                  '\tOS: ', record.op_sys,
+                                  flush=True)
+                            '''
+                            self.record_list.append(record)
+                            self.gui.build_result()
+                    fileio.build_report(self.record_list)
 
-                if scan_type == 'Ping':
-                    if exit_code == 0 and mac and "TTL expired in transit" not in str(output):
-                        record = Record()
-                        record.ip = addr
-                        record.mac = mac
-                        record.type = None  # Unavailable for this method
-                        record.oui = utils.retrieve_oui(record)
-                        '''
-                        print('IP: ', record.ip,
-                              '\tMAC: ', record.mac,
-                              '\tVendor: ', record.oui,
-                              '\tOS: ', record.op_sys,
-                              flush=True)
-                        '''
-                        self.record_list.append(record)
-                        self.gui.build_result()
-                        fileio.build_report(self.record_list)
-            except:
-                print('Error during scan')
+            if scan_type == 'Ping':
+                if exit_code == 0 and mac and "TTL expired in transit" not in str(output):
+                    record = Record()
+                    record.ip = addr
+                    record.mac = mac
+                    record.type = None  # Unavailable for this method
+                    record.oui = utils.retrieve_oui(record)
+                    '''
+                    print('IP: ', record.ip,
+                          '\tMAC: ', record.mac,
+                          '\tVendor: ', record.oui,
+                          '\tOS: ', record.op_sys,
+                          flush=True)
+                    '''
+                    self.record_list.append(record)
+                    self.gui.build_result()
+                    fileio.build_report(self.record_list)
+            #except:
+            #    print('Error during scan')
 
     '''Create multiple threads to accelerate pinging'''
     def start_scan(self):
@@ -112,3 +112,4 @@ class Record:
         self.op_sys = 'Unknown'
         self.op_acc = '0'
         self.ports = []
+        self.details_processed = False

@@ -37,6 +37,14 @@ def retrieve_os(record):
     return [os, conf]
 
 
+'''Retrieve all available details for a given record'''
+def retrieve_all_details(record):
+    record.details_processed = True
+    return {
+        'os': retrieve_os(record),
+        "ports": retrieve_port_status(record)
+    }
+
 '''Collect visible ports'''
 def retrieve_port_status(record):
     nm = nmap.PortScanner()
